@@ -273,39 +273,51 @@ Write-Host "✅ Metadata fetched for $totalCount packages`n" -ForegroundColor Gr
 # ──────────────────────────────────────────────────────────────
 Write-Host "━━━ 🚨 VULNERABLE PACKAGES ━━━" -ForegroundColor Red
 
+# SDK-style: dotnet CLI (for PackageReference projects)
 $vulnerableMap = @{}
 
-# SDK-style: dotnet CLI (for PackageReference projects)
-$vulnerableOutput = dotnet list $solutionFile.FullName package --vulnerable 2>&1
+try {
+    $jsonRaw = dotnet list $solutionFile.FullName package --vulnerable --format json 2>&1
+    $json = $jsonRaw | Out-String | ConvertFrom-Json
 
-foreach ($line in $vulnerableOutput) {
+    foreach ($proj in $json.projects) {
 
-    if ($line -match "^(.+\.csproj)\s*:\s*warning NU190\d: Package '(.+?)' (.+?) has a known (\w+) severity vulnerability,\s*(https://\S+)") {
+        $projectName = [System.IO.Path]::GetFileNameWithoutExtension($proj.path)
 
-        $projectName = [System.IO.Path]::GetFileNameWithoutExtension($matches[1])
-        $packageId   = $matches[2]
-        $version     = $matches[3]
-        $severity    = ConvertTo-TitleCase $matches[4]
-        $advisoryUrl = $matches[5]
-        $key         = "$packageId|$version|$severity"
+        foreach ($framework in $proj.frameworks) {
+            foreach ($pkg in $framework.topLevelPackages) {
 
-        if (-not $vulnerableMap.ContainsKey($key)) {
-            $vulnerableMap[$key] = [PSCustomObject]@{
-                Category    = "Vulnerable"
-                Package     = $packageId
-                Version     = $version
-                Severity    = $severity
-                Advisory    = $advisoryUrl
-                Message     = $null
-                Alternative = $null
-                Projects    = [System.Collections.Generic.List[string]]::new()
+                if ($pkg.vulnerabilities -and $pkg.vulnerabilities.Count -gt 0) {
+
+                    foreach ($v in $pkg.vulnerabilities) {
+
+                        $severity = ConvertTo-TitleCase $v.severity
+                        $key = "$($pkg.id)|$($pkg.resolvedVersion)|$severity"
+
+                        if (-not $vulnerableMap.ContainsKey($key)) {
+                            $vulnerableMap[$key] = [PSCustomObject]@{
+                                Category    = "Vulnerable"
+                                Package     = $pkg.id
+                                Version     = $pkg.resolvedVersion
+                                Severity    = $severity
+                                Advisory    = $v.advisoryUrl
+                                Message     = $null
+                                Alternative = $null
+                                Projects    = [System.Collections.Generic.List[string]]::new()
+                            }
+                        }
+
+                        if (-not $vulnerableMap[$key].Projects.Contains($projectName)) {
+                            $vulnerableMap[$key].Projects.Add($projectName)
+                        }
+                    }
+                }
             }
         }
-
-        if ($projectName -and -not $vulnerableMap[$key].Projects.Contains($projectName)) {
-            $vulnerableMap[$key].Projects.Add($projectName)
-        }
     }
+
+} catch {
+    Write-Host "⚠️ Failed to parse vulnerable JSON output" -ForegroundColor Yellow
 }
 
 # Legacy + any missed: NuGet API results
