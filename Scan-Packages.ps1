@@ -1,9 +1,52 @@
+﻿# Scan-Packages.ps1
+
+# Console only (default)
+#.\Scan-Packages.ps1
+
+# Export to CSV
+#.\Scan-Packages.ps1 -Export CSV
+
+# Export to HTML (opens automatically in browser)
+#.\Scan-Packages.ps1 -Export HTML
+
+# Custom file name
+#.\Scan-Packages.ps1 -Export HTML -OutputFile "C:\reports\my-project"
+
 param(
     [string]$SolutionPath = ".",
     [ValidateSet("None", "CSV", "HTML")]
     [string]$Export = "None",
     [string]$OutputFile = "nuget-report"
 )
+
+# ── Severity helpers ───────────────────────────────────────────
+function Get-SeverityOrder {
+    param([string]$Severity)
+    switch -Regex ($Severity) {
+        "Critical" { return 0 }
+        "High"     { return 1 }
+        "Moderate" { return 2 }
+        "Low"      { return 3 }
+        default    { return 4 }
+    }
+}
+
+function ConvertTo-TitleCase {
+    param([string]$Value)
+    if (-not $Value) { return $Value }
+    return (Get-Culture).TextInfo.ToTitleCase($Value.ToLower())
+}
+
+function Get-SeverityLabel {
+    param([int]$Value)
+    switch ($Value) {
+        0 { return "Low" }
+        1 { return "Moderate" }
+        2 { return "High" }
+        3 { return "Critical" }
+        default { return "Unknown" }
+    }
+}
 
 # ── Find solution ──────────────────────────────────────────────
 $solutionFile = Get-ChildItem -Path $SolutionPath -Filter "*.sln" -Recurse | Select-Object -First 1
@@ -16,12 +59,224 @@ if (-not $solutionFile) {
 Write-Host "`n🔍 Scanning solution: $($solutionFile.Name)`n" -ForegroundColor Cyan
 
 # ──────────────────────────────────────────────────────────────
+# Collect all packages — PackageReference + packages.config
+# ──────────────────────────────────────────────────────────────
+$projectFiles = Get-ChildItem -Path $SolutionPath -Filter "*.csproj" -Recurse
+$allPackages  = @{}
+
+foreach ($project in $projectFiles) {
+
+    # ── SDK-style: <PackageReference> ──
+    [xml]$xml = Get-Content $project.FullName
+
+    foreach ($reference in $xml.SelectNodes("//PackageReference")) {
+
+        $packageId = $reference.GetAttribute("Include")
+        $version   = $reference.GetAttribute("Version")
+
+        if ($packageId -and $version -and $version -notmatch '\*') {
+
+            $key = "$packageId|$version"
+
+            if (-not $allPackages.ContainsKey($key)) {
+                $allPackages[$key] = @{ Id = $packageId; Version = $version; Projects = @() }
+            }
+
+            if ($allPackages[$key].Projects -notcontains $project.BaseName) {
+                $allPackages[$key].Projects += $project.BaseName
+            }
+        }
+    }
+
+    # ── Legacy: packages.config ──
+    $packagesConfig = Join-Path $project.DirectoryName "packages.config"
+
+    if (Test-Path $packagesConfig) {
+
+        [xml]$cfg = Get-Content $packagesConfig
+
+        foreach ($pkg in $cfg.SelectNodes("//package")) {
+
+            $packageId = $pkg.GetAttribute("id")
+            $version   = $pkg.GetAttribute("version")
+
+            if ($packageId -and $version) {
+
+                $key = "$packageId|$version"
+
+                if (-not $allPackages.ContainsKey($key)) {
+                    $allPackages[$key] = @{ Id = $packageId; Version = $version; Projects = @() }
+                }
+
+                if ($allPackages[$key].Projects -notcontains $project.BaseName) {
+                    $allPackages[$key].Projects += $project.BaseName
+                }
+            }
+        }
+    }
+}
+
+# ──────────────────────────────────────────────────────────────
+# Single NuGet API pass — fetch vulnerability + deprecation
+# for all packages in parallel
+# ──────────────────────────────────────────────────────────────
+Write-Host "🔄 Fetching NuGet metadata..." -ForegroundColor Cyan
+
+$packageList  = $allPackages.Values | ForEach-Object { [PSCustomObject]$_ }
+$totalCount   = $packageList.Count
+
+# ForEach-Object -Parallel requires PowerShell 7+
+# Falls back to sequential on PS 5.x
+$psVersion = $PSVersionTable.PSVersion.Major
+
+if ($psVersion -ge 7) {
+
+    $nugetResults = $packageList | ForEach-Object -Parallel {
+
+        $pkg = $_
+
+        function Get-SeverityLabel-Inner {
+            param([int]$v)
+            switch ($v) { 0{"Low"} 1{"Moderate"} 2{"High"} 3{"Critical"} default{"Unknown"} }
+        }
+
+        $result = [PSCustomObject]@{
+            Id               = $pkg.Id
+            Version          = $pkg.Version
+            Projects         = $pkg.Projects
+            IsDeprecated     = $false
+            DeprecatedSeverity = $null
+            DeprecationMessage = $null
+            AltId            = $null
+            AltRange         = $null
+            Vulnerabilities  = @()
+        }
+
+        try {
+            $url  = "https://api.nuget.org/v3/registration5-gz-semver2/$($pkg.Id.ToLower())/index.json"
+            $reg  = Invoke-RestMethod -Uri $url -ErrorAction Stop
+
+            foreach ($page in $reg.items) {
+                $items = $page.items
+                if (-not $items) {
+                    $pd = Invoke-RestMethod -Uri $page.'@id' -ErrorAction SilentlyContinue
+                    $items = $pd.items
+                }
+                foreach ($item in $items) {
+                    if ($item.catalogEntry.version -eq $pkg.Version) {
+                        $entry = $item.catalogEntry
+
+                        if ($null -ne $entry.deprecation) {
+                            $result.IsDeprecated       = $true
+                            $result.DeprecatedSeverity = ($entry.deprecation.reasons -join ", ")
+                            $result.DeprecationMessage = $entry.deprecation.message
+                            $result.AltId              = $entry.deprecation.alternatePackage.id
+                            $result.AltRange           = $entry.deprecation.alternatePackage.range
+                        }
+
+                        if ($null -ne $entry.vulnerabilities -and $entry.vulnerabilities.Count -gt 0) {
+                            $vulns = @()
+                            foreach ($v in $entry.vulnerabilities) {
+                                $vulns += [PSCustomObject]@{
+                                    Severity    = (Get-SeverityLabel-Inner -v ([int]$v.severity))
+                                    AdvisoryUrl = $v.advisoryUrl
+                                }
+                            }
+                            $result.Vulnerabilities = $vulns
+                        }
+
+                        break
+                    }
+                }
+            }
+        } catch {}
+
+        $result
+
+    } -ThrottleLimit 20
+
+} else {
+
+    # Sequential fallback for PS 5.x
+    $nugetResults = @()
+    $seq = 0
+
+    foreach ($pkg in $packageList) {
+
+        $seq++
+        Write-Progress `
+            -Activity "Fetching NuGet metadata" `
+            -Status "$($pkg.Id) $($pkg.Version)" `
+            -PercentComplete (($seq / $totalCount) * 100)
+
+        $result = [PSCustomObject]@{
+            Id                 = $pkg.Id
+            Version            = $pkg.Version
+            Projects           = $pkg.Projects
+            IsDeprecated       = $false
+            DeprecatedSeverity = $null
+            DeprecationMessage = $null
+            AltId              = $null
+            AltRange           = $null
+            Vulnerabilities    = @()
+        }
+
+        try {
+            $url = "https://api.nuget.org/v3/registration5-gz-semver2/$($pkg.Id.ToLower())/index.json"
+            $reg = Invoke-RestMethod -Uri $url -ErrorAction Stop
+
+            foreach ($page in $reg.items) {
+                $items = $page.items
+                if (-not $items) {
+                    $pd    = Invoke-RestMethod -Uri $page.'@id' -ErrorAction SilentlyContinue
+                    $items = $pd.items
+                }
+                foreach ($item in $items) {
+                    if ($item.catalogEntry.version -eq $pkg.Version) {
+                        $entry = $item.catalogEntry
+
+                        if ($null -ne $entry.deprecation) {
+                            $result.IsDeprecated       = $true
+                            $result.DeprecatedSeverity = ($entry.deprecation.reasons -join ", ")
+                            $result.DeprecationMessage = $entry.deprecation.message
+                            $result.AltId              = $entry.deprecation.alternatePackage.id
+                            $result.AltRange           = $entry.deprecation.alternatePackage.range
+                        }
+
+                        if ($null -ne $entry.vulnerabilities -and $entry.vulnerabilities.Count -gt 0) {
+                            $vulns = @()
+                            foreach ($v in $entry.vulnerabilities) {
+                                $vulns += [PSCustomObject]@{
+                                    Severity    = (Get-SeverityLabel -Value ([int]$v.severity))
+                                    AdvisoryUrl = $v.advisoryUrl
+                                }
+                            }
+                            $result.Vulnerabilities = $vulns
+                        }
+
+                        break
+                    }
+                }
+            }
+        } catch {}
+
+        $nugetResults += $result
+    }
+
+    Write-Progress -Completed -Activity "Fetching NuGet metadata"
+}
+
+Write-Host "✅ Metadata fetched for $totalCount packages`n" -ForegroundColor Green
+
+# ──────────────────────────────────────────────────────────────
 # 1. Vulnerable Packages
 # ──────────────────────────────────────────────────────────────
 Write-Host "━━━ 🚨 VULNERABLE PACKAGES ━━━" -ForegroundColor Red
 
-$vulnerableOutput = dotnet list $solutionFile.FullName package --vulnerable 2>&1
 $vulnerableMap = @{}
+
+# SDK-style: dotnet CLI (for PackageReference projects)
+$vulnerableOutput = dotnet list $solutionFile.FullName package --vulnerable 2>&1
 
 foreach ($line in $vulnerableOutput) {
 
@@ -30,21 +285,20 @@ foreach ($line in $vulnerableOutput) {
         $projectName = [System.IO.Path]::GetFileNameWithoutExtension($matches[1])
         $packageId   = $matches[2]
         $version     = $matches[3]
-        $severity    = $matches[4]
+        $severity    = ConvertTo-TitleCase $matches[4]
         $advisoryUrl = $matches[5]
-
-        $key = "$packageId|$version|$severity"
+        $key         = "$packageId|$version|$severity"
 
         if (-not $vulnerableMap.ContainsKey($key)) {
-
             $vulnerableMap[$key] = [PSCustomObject]@{
-                Category   = "Vulnerable"
-                Package    = $packageId
-                Version    = $version
-                Reason     = $severity
-                Message    = $advisoryUrl
-                Alternative= "—"
-                Projects   = [System.Collections.Generic.List[string]]::new()
+                Category    = "Vulnerable"
+                Package     = $packageId
+                Version     = $version
+                Severity    = $severity
+                Advisory    = $advisoryUrl
+                Message     = $null
+                Alternative = $null
+                Projects    = [System.Collections.Generic.List[string]]::new()
             }
         }
 
@@ -54,16 +308,46 @@ foreach ($line in $vulnerableOutput) {
     }
 }
 
-$vulnerableList = $vulnerableMap.Values | ForEach-Object {
-    $_ | Select-Object Category, Package, Version, Reason, Message, Alternative,
-        @{Name="Projects"; Expression={ $_.Projects -join ", " }}
+# Legacy + any missed: NuGet API results
+foreach ($r in $nugetResults) {
+    foreach ($vuln in $r.Vulnerabilities) {
+
+        $severity = ConvertTo-TitleCase $vuln.Severity
+        $key      = "$($r.Id)|$($r.Version)|$severity"
+
+        if (-not $vulnerableMap.ContainsKey($key)) {
+            $vulnerableMap[$key] = [PSCustomObject]@{
+                Category    = "Vulnerable"
+                Package     = $r.Id
+                Version     = $r.Version
+                Severity    = $severity
+                Advisory    = $vuln.AdvisoryUrl
+                Message     = $null
+                Alternative = $null
+                Projects    = [System.Collections.Generic.List[string]]::new()
+            }
+        }
+
+        foreach ($proj in $r.Projects) {
+            if (-not $vulnerableMap[$key].Projects.Contains($proj)) {
+                $vulnerableMap[$key].Projects.Add($proj)
+            }
+        }
+    }
 }
+
+$vulnerableList = $vulnerableMap.Values |
+    Sort-Object { Get-SeverityOrder $_.Severity } |
+    ForEach-Object {
+        $_ | Select-Object Category, Package, Version, Severity, Advisory, Message, Alternative,
+            @{Name="Projects"; Expression={ $_.Projects -join ", " }}
+    }
 
 if ($vulnerableList) {
 
     foreach ($item in $vulnerableList) {
 
-        $color = switch ($item.Reason) {
+        $color = switch ($item.Severity) {
             "Critical" { "Red" }
             "High"     { "DarkRed" }
             "Moderate" { "Yellow" }
@@ -71,8 +355,8 @@ if ($vulnerableList) {
         }
 
         Write-Host "  📦 $($item.Package) $($item.Version)" -ForegroundColor $color
-        Write-Host "     Severity : $($item.Reason)" -ForegroundColor $color
-        Write-Host "     Advisory : $($item.Message)" -ForegroundColor Gray
+        Write-Host "     Severity : $($item.Severity)" -ForegroundColor $color
+        Write-Host "     Advisory : $($item.Advisory)" -ForegroundColor Gray
         Write-Host "     Projects : $($item.Projects)" -ForegroundColor DarkGray
         Write-Host ""
     }
@@ -86,115 +370,21 @@ if ($vulnerableList) {
 # ──────────────────────────────────────────────────────────────
 Write-Host "`n━━━ ⚠️ DEPRECATED PACKAGES ━━━" -ForegroundColor Yellow
 
-function Get-PackageDeprecationInfo {
-
-    param(
-        [string]$PackageId,
-        [string]$Version
-    )
-
-    try {
-
-        $registrationUrl = "https://api.nuget.org/v3/registration5-gz-semver2/$($PackageId.ToLower())/index.json"
-        $registration = Invoke-RestMethod -Uri $registrationUrl -ErrorAction Stop
-
-        foreach ($page in $registration.items) {
-
-            $items = $page.items
-
-            if (-not $items) {
-                $pageData = Invoke-RestMethod -Uri $page.'@id' -ErrorAction SilentlyContinue
-                $items = $pageData.items
-            }
-
-            foreach ($item in $items) {
-
-                if ($item.catalogEntry.version -eq $Version) {
-
-                    $entry = $item.catalogEntry
-
-                    if ($null -ne $entry.deprecation) {
-
-                        return @{
-                            IsDeprecated = $true
-                            Reason       = ($entry.deprecation.reasons -join ", ")
-                            Message      = $entry.deprecation.message
-                            AltId        = $entry.deprecation.alternatePackage.id
-                            AltRange     = $entry.deprecation.alternatePackage.range
-                        }
-                    }
-
-                    return @{ IsDeprecated = $false }
-                }
-            }
-        }
-
-    } catch {
-        return @{ IsDeprecated = $false }
-    }
-
-    return @{ IsDeprecated = $false }
-}
-
-$projectFiles = Get-ChildItem -Path $SolutionPath -Filter "*.csproj" -Recurse
-$allPackages = @{}
-
-foreach ($project in $projectFiles) {
-
-    [xml]$xml = Get-Content $project.FullName
-
-    foreach ($reference in $xml.SelectNodes("//PackageReference")) {
-
-        $packageId = $reference.GetAttribute("Include")
-        $version   = $reference.GetAttribute("Version")
-
-        if ($packageId -and $version -and $version -notmatch '\*') {
-
-            $key = "$packageId|$version"
-
-            if (-not $allPackages.ContainsKey($key)) {
-
-                $allPackages[$key] = @{
-                    Id       = $packageId
-                    Version  = $version
-                    Projects = @()
-                }
-            }
-
-            $allPackages[$key].Projects += $project.Name
-        }
-    }
-}
-
-$deprecatedList = @()
-$counter = 0
-
-foreach ($package in $allPackages.Values) {
-
-    $counter++
-
-    Write-Progress `
-        -Activity "Checking NuGet API" `
-        -Status "$($package.Id) $($package.Version)" `
-        -PercentComplete (($counter / $allPackages.Count) * 100)
-
-    $info = Get-PackageDeprecationInfo -PackageId $package.Id -Version $package.Version
-
-    if ($info.IsDeprecated) {
-
-        $deprecatedList += [PSCustomObject]@{
+$deprecatedList = $nugetResults |
+    Where-Object { $_.IsDeprecated } |
+    ForEach-Object {
+        [PSCustomObject]@{
             Category    = "Deprecated"
-            Package     = $package.Id
-            Version     = $package.Version
-            Reason      = $info.Reason
-            Message     = $info.Message
-            Alternative = if ($info.AltId) { "$($info.AltId) $($info.AltRange)" } else { "—" }
-            Projects    = ($package.Projects | Select-Object -Unique) -join ", "
+            Package     = $_.Id
+            Version     = $_.Version
+            Severity    = $_.DeprecatedSeverity
+            Advisory    = $null
+            Message     = $_.DeprecationMessage
+            Alternative = if ($_.AltId) { "$($_.AltId) $($_.AltRange)" } else { $null }
+            Projects    = ($_.Projects | Select-Object -Unique) -join ", "
         }
-    }
-}
-
-Write-Progress -Completed -Activity "Completed"
+    } |
+    Sort-Object { Get-SeverityOrder $_.Severity }
 
 if ($deprecatedList.Count -eq 0) {
 
@@ -205,13 +395,16 @@ if ($deprecatedList.Count -eq 0) {
     foreach ($item in $deprecatedList) {
 
         Write-Host "  📦 $($item.Package) $($item.Version)" -ForegroundColor Red
-        Write-Host "     Reason      : $($item.Reason)" -ForegroundColor Yellow
+        Write-Host "     Severity    : $($item.Severity)" -ForegroundColor Yellow
 
         if ($item.Message) {
             Write-Host "     Message     : $($item.Message)" -ForegroundColor Gray
         }
 
-        Write-Host "     Alternative : $($item.Alternative)" -ForegroundColor Cyan
+        if ($item.Alternative) {
+            Write-Host "     Alternative : $($item.Alternative)" -ForegroundColor Cyan
+        }
+
         Write-Host "     Projects    : $($item.Projects)" -ForegroundColor DarkGray
         Write-Host ""
     }
@@ -222,60 +415,84 @@ if ($deprecatedList.Count -eq 0) {
 # ──────────────────────────────────────────────────────────────
 Write-Host "`n━━━ 📦 OUTDATED PACKAGES ━━━" -ForegroundColor Blue
 
-$outdatedOutput = dotnet list $solutionFile.FullName package --outdated 2>&1
-$outdatedMap = @{}
-$currentProject = ""
+$outdatedList   = @()
+$outdatedErrors = $null
 
-foreach ($line in $outdatedOutput) {
+try {
+    $jsonRaw = dotnet package list --outdated --format json 2>&1
 
-    if ($line -match "Project '(.+)'") {
-        $currentProject = [System.IO.Path]::GetFileNameWithoutExtension($matches[1])
+    # jeśli dotnet zwróci error tekstowy
+    if (($jsonRaw -join "`n") -match "^error") {
+        $outdatedErrors = $jsonRaw
     }
+    else {
+        $json = $jsonRaw | Out-String | ConvertFrom-Json
 
-    if ($line -match "^\s+>\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)") {
+        $outdatedMap = @{}
 
-        $packageId = $matches[1]
-        $resolved  = $matches[2]
-        $latest    = $matches[4]
+        foreach ($proj in $json.projects) {
 
-        $key = "$packageId|$resolved"
+            $projectName = [System.IO.Path]::GetFileNameWithoutExtension($proj.path)
 
-        if (-not $outdatedMap.ContainsKey($key)) {
+            foreach ($framework in $proj.frameworks) {
 
-            $outdatedMap[$key] = [PSCustomObject]@{
-                Category    = "Outdated"
-                Package     = $packageId
-                Version     = $resolved
-                Reason      = "Latest: $latest"
-                Message     = ""
-                Alternative = "—"
-                Projects    = [System.Collections.Generic.List[string]]::new()
+                foreach ($pkg in $framework.topLevelPackages) {
+
+                    if ($pkg.latestVersion -and $pkg.resolvedVersion -ne $pkg.latestVersion) {
+
+                        $key = "$($pkg.id)|$($pkg.resolvedVersion)"
+
+                        if (-not $outdatedMap.ContainsKey($key)) {
+                            $outdatedMap[$key] = [PSCustomObject]@{
+                                Category    = "Outdated"
+                                Package     = $pkg.id
+                                Version     = $pkg.resolvedVersion
+                                Severity    = "Latest: $($pkg.latestVersion)"
+                                Advisory    = $null
+                                Message     = $null
+                                Alternative = $null
+                                Projects    = [System.Collections.Generic.List[string]]::new()
+                            }
+                        }
+
+                        if (-not $outdatedMap[$key].Projects.Contains($projectName)) {
+                            $outdatedMap[$key].Projects.Add($projectName)
+                        }
+                    }
+                }
             }
         }
 
-        if ($currentProject -and -not $outdatedMap[$key].Projects.Contains($currentProject)) {
-            $outdatedMap[$key].Projects.Add($currentProject)
+        $outdatedList = $outdatedMap.Values | ForEach-Object {
+            $_ | Select-Object Category, Package, Version, Severity, Advisory, Message, Alternative,
+            @{Name="Projects"; Expression={ $_.Projects -join ", " }}
         }
     }
 }
-
-$outdatedList = $outdatedMap.Values | ForEach-Object {
-    $_ | Select-Object Category, Package, Version, Reason, Message, Alternative,
-        @{Name="Projects"; Expression={ $_.Projects -join ", " }}
+catch {
+    $outdatedErrors = $_
 }
 
-if ($outdatedList) {
+if ($outdatedErrors) {
+
+    Write-Host "⚠️ Outdated scan failed." -ForegroundColor Yellow
+
+}
+elseif ($outdatedList.Count -gt 0) {
 
     foreach ($item in $outdatedList) {
 
         Write-Host "  📦 $($item.Package) $($item.Version)" -ForegroundColor DarkCyan
-        Write-Host "     $($item.Reason)" -ForegroundColor Cyan
+        Write-Host "     $($item.Severity)" -ForegroundColor Cyan
         Write-Host "     Projects: $($item.Projects)" -ForegroundColor DarkGray
         Write-Host ""
     }
 
-} else {
+}
+else {
+
     Write-Host "✅ All packages are up to date." -ForegroundColor Green
+
 }
 
 # ──────────────────────────────────────────────────────────────
@@ -284,8 +501,13 @@ if ($outdatedList) {
 Write-Host "`n━━━ 📊 SUMMARY ━━━" -ForegroundColor Cyan
 
 Write-Host "  Vulnerable : $(if ($vulnerableList) { '🚨 ' + @($vulnerableList).Count } else { '✅ 0' })"
-Write-Host "  Deprecated : $(if ($deprecatedList) { '⚠️ ' + $deprecatedList.Count } else { '✅ 0' })"
-Write-Host "  Outdated   : $(if ($outdatedList) { '📦 ' + @($outdatedList).Count } else { '✅ 0' })"
+Write-Host "  Deprecated : $(if (@($deprecatedList).Count -gt 0) { '⚠️ ' + @($deprecatedList).Count } else { '✅ 0' })"
+
+if ($outdatedErrors) {
+    Write-Host "  Outdated   : ⚠️  scan failed (build errors)" -ForegroundColor Yellow
+} else {
+    Write-Host "  Outdated   : $(if ($outdatedList) { '📦 ' + @($outdatedList).Count } else { '✅ 0' })"
+}
 
 # ──────────────────────────────────────────────────────────────
 # Export
@@ -294,7 +516,8 @@ if ($Export -eq "None") {
     exit 0
 }
 
-$allResults = @($vulnerableList) + @($deprecatedList) + @($outdatedList)
+$allResults = @($vulnerableList) + @($deprecatedList) + @($outdatedList) |
+    Sort-Object { Get-SeverityOrder $_.Severity }
 
 if ($Export -eq "CSV") {
 
@@ -306,8 +529,15 @@ if ($Export -eq "CSV") {
 
 if ($Export -eq "HTML") {
 
-    $htmlPath = "$OutputFile.html"
+    $htmlPath    = "$OutputFile.html"
     $generatedAt = Get-Date -Format "yyyy-MM-dd HH:mm"
+
+    function Format-Cell {
+        param($Value, [bool]$IsLink = $false)
+        if (-not $Value) { return "—" }
+        if ($IsLink)     { return "<a href='$Value' target='_blank'>Open</a>" }
+        return [System.Web.HttpUtility]::HtmlEncode($Value)
+    }
 
     $rows = $allResults | ForEach-Object {
 
@@ -317,7 +547,7 @@ if ($Export -eq "HTML") {
             "Outdated"   { "#3498db" }
         }
 
-        $reasonColor = switch ($_.Reason) {
+        $severityColor = switch ($_.Severity) {
             { $_ -match "Critical" } { "#e74c3c" }
             { $_ -match "High" }     { "#c0392b" }
             { $_ -match "Moderate" } { "#e67e22" }
@@ -329,13 +559,18 @@ if ($Export -eq "HTML") {
 <td><span class='badge' style='background:$badgeColor'>$($_.Category)</span></td>
 <td><strong>$($_.Package)</strong></td>
 <td><code>$($_.Version)</code></td>
-<td style='color:$reasonColor;font-weight:600'>$($_.Reason)</td>
-<td>$(if ($_.Message) { "<a href='$($_.Message)' target='_blank'>Open</a>" } else { "—" })</td>
-<td>$($_.Alternative)</td>
+<td style='color:$severityColor;font-weight:600'>$($_.Severity)</td>
+<td>$(Format-Cell $_.Advisory -IsLink $true)</td>
+<td>$(Format-Cell $_.Message)</td>
+<td>$(Format-Cell $_.Alternative)</td>
 <td class='projects'>$($_.Projects)</td>
 </tr>
 "@
     }
+
+    $outdatedNote = if ($outdatedErrors) {
+        "<div class='build-error'>⚠️ Outdated scan incomplete — fix build errors and re-run.</div>"
+    } else { "" }
 
 $html = @"
 <!DOCTYPE html>
@@ -352,6 +587,7 @@ h1{font-size:1.7rem;margin-bottom:.25rem}
 .card{background:#fff;border-radius:10px;padding:1rem 1.5rem;box-shadow:0 1px 4px rgba(0,0,0,.08);flex:1;min-width:140px;text-align:center}
 .num{font-size:2.2rem;font-weight:700}
 .lbl{font-size:.8rem;color:#888;margin-top:.25rem}
+.build-error{background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;color:#7a5f00;font-size:.88rem}
 table{width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08)}
 th{background:#2c3e50;color:#fff;padding:.75rem 1rem;text-align:left;font-size:.8rem;text-transform:uppercase}
 td{padding:.65rem 1rem;border-bottom:1px solid #f0f0f0;font-size:.88rem}
@@ -378,15 +614,17 @@ Generated: $generatedAt
 </div>
 
 <div class="card">
-<div class="num" style="color:#e67e22">$($deprecatedList.Count)</div>
+<div class="num" style="color:#e67e22">$(@($deprecatedList).Count)</div>
 <div class="lbl">Deprecated</div>
 </div>
 
 <div class="card">
-<div class="num" style="color:#3498db">$(@($outdatedList).Count)</div>
+<div class="num" style="color:#3498db">$(if ($outdatedErrors) { "?" } else { @($outdatedList).Count })</div>
 <div class="lbl">Outdated</div>
 </div>
 </div>
+
+$outdatedNote
 
 <table>
 <thead>
@@ -394,8 +632,9 @@ Generated: $generatedAt
 <th>Category</th>
 <th>Package</th>
 <th>Version</th>
-<th>Reason</th>
+<th>Severity</th>
 <th>Advisory</th>
+<th>Message</th>
 <th>Alternative</th>
 <th>Projects</th>
 </tr>
