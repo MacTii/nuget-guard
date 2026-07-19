@@ -47,10 +47,15 @@ The `nuget-guard` command is then available globally. To uninstall: `dotnet tool
 Inside the repository where you want to use it:
 
 ```bash
-dotnet new tool-manifest                                   # once per repo (creates .config/dotnet-tools.json)
+dotnet new tool-manifest                                   # once per repo (creates the dotnet-tools.json manifest)
 dotnet tool install NuGetGuard --add-source <path-to>/nuget-guard/artifacts
-dotnet tool run nuget-guard -- --export html               # or: dotnet nuget-guard
+
+dotnet nuget-guard --export html                           # simplest way to run a local tool
+dotnet tool run nuget-guard -- --export html               # equivalent; the first '--' separates
+                                                           # dotnet's own options from the tool's options
 ```
+
+> Note: with `dotnet tool run`, options like `--export` **must** come after `--`, otherwise the dotnet CLI intercepts them itself. The `dotnet nuget-guard` form needs no separator.
 
 The manifest is committed to git, so teammates just run `dotnet tool restore` to get the same tool version.
 
