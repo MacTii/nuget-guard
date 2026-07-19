@@ -24,14 +24,7 @@
 
 ## 📦 Installation
 
-### From nuget.org (once published)
-
-```bash
-dotnet tool install -g NuGetGuard
-dotnet tool update -g NuGetGuard   # update to the latest version
-```
-
-### From source (GitHub clone — no nuget.org needed)
+Requires the .NET SDK (8 or newer). Clone, pack, install — takes under a minute:
 
 ```bash
 git clone https://github.com/MacTii/nuget-guard.git
@@ -40,7 +33,7 @@ dotnet pack src/NuGetGuard/NuGetGuard.csproj -c Release -o artifacts
 dotnet tool install -g NuGetGuard --add-source ./artifacts
 ```
 
-The `nuget-guard` command is then available globally. To uninstall: `dotnet tool uninstall -g NuGetGuard`.
+The `nuget-guard` command is then available globally in your terminal. To uninstall: `dotnet tool uninstall -g NuGetGuard`.
 
 ### As a local tool (per-repository, no global install)
 
@@ -150,15 +143,60 @@ nuget-guard --skip-redundant
 
 ---
 
-## 🏗️ CI/CD examples
+## 🏗️ CI/CD
+
+The pipeline builds the tool straight from this repository, so no package feed is required.
+
+### GitLab CI (`.gitlab-ci.yml`)
+
+```yaml
+nuget-audit:
+  stage: test
+  image: mcr.microsoft.com/dotnet/sdk:8.0
+  script:
+    # install NuGetGuard from source
+    - git clone --depth 1 https://github.com/MacTii/nuget-guard.git /tmp/ng
+    - dotnet pack /tmp/ng/src/NuGetGuard/NuGetGuard.csproj -c Release -o /tmp/ng/artifacts
+    - dotnet tool install -g NuGetGuard --add-source /tmp/ng/artifacts
+    - export PATH="$PATH:/root/.dotnet/tools"
+    # scan the checked-out repository; vulnerable packages fail the pipeline
+    - nuget-guard --export html --output nuget-audit --no-open --fail-on vulnerable
+  artifacts:
+    when: always            # keep the report even when the job fails the build
+    paths:
+      - nuget-audit.html
+    expire_in: 30 days
+```
+
+Scheduled nightly audit that only reports, without blocking merges — add a pipeline schedule in GitLab and:
+
+```yaml
+nuget-audit-nightly:
+  extends: nuget-audit
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+  script:
+    - git clone --depth 1 https://github.com/MacTii/nuget-guard.git /tmp/ng
+    - dotnet pack /tmp/ng/src/NuGetGuard/NuGetGuard.csproj -c Release -o /tmp/ng/artifacts
+    - dotnet tool install -g NuGetGuard --add-source /tmp/ng/artifacts
+    - export PATH="$PATH:/root/.dotnet/tools"
+    - nuget-guard --export csv --output nuget-audit --fail-on none
+  artifacts:
+    paths:
+      - nuget-audit*.csv
+```
 
 ### GitHub Actions
 
 ```yaml
-- name: Audit NuGet packages
+- name: Install NuGetGuard
   run: |
-    dotnet tool install -g NuGetGuard
-    nuget-guard --export csv --output nuget-audit --fail-on vulnerable
+    git clone --depth 1 https://github.com/MacTii/nuget-guard.git ${{ runner.temp }}/ng
+    dotnet pack ${{ runner.temp }}/ng/src/NuGetGuard/NuGetGuard.csproj -c Release -o ${{ runner.temp }}/ng/artifacts
+    dotnet tool install -g NuGetGuard --add-source ${{ runner.temp }}/ng/artifacts
+
+- name: Audit NuGet packages
+  run: nuget-guard --export csv --output nuget-audit --fail-on vulnerable
 
 - name: Upload audit report
   if: always()
@@ -168,73 +206,10 @@ nuget-guard --skip-redundant
     path: nuget-audit*.csv
 ```
 
-### GitLab CI (`.gitlab-ci.yml`)
+### Other ways to get the tool into CI
 
-```yaml
-nuget-audit:
-  stage: test
-  image: mcr.microsoft.com/dotnet/sdk:8.0
-  script:
-    # From nuget.org once published, or build from a checked-out copy of this repo:
-    - dotnet tool install -g NuGetGuard || dotnet tool update -g NuGetGuard
-    - export PATH="$PATH:$HOME/.dotnet/tools"
-    - nuget-guard --export html --output nuget-audit --no-open --fail-on vulnerable
-  artifacts:
-    when: always            # keep the report even when the job fails the build
-    paths:
-      - nuget-audit.html
-    expire_in: 30 days
-  allow_failure: false       # a vulnerable package fails the pipeline
-```
-
-### Without publishing to nuget.org
-
-CI does not require the package on nuget.org — any pipeline can build the tool from this repository:
-
-```yaml
-# GitLab CI
-nuget-audit:
-  stage: test
-  image: mcr.microsoft.com/dotnet/sdk:8.0
-  script:
-    - git clone --depth 1 https://github.com/MacTii/nuget-guard.git /tmp/ng
-    - dotnet pack /tmp/ng/src/NuGetGuard/NuGetGuard.csproj -c Release -o /tmp/ng/artifacts
-    - dotnet tool install -g NuGetGuard --add-source /tmp/ng/artifacts
-    - export PATH="$PATH:/root/.dotnet/tools"
-    - nuget-guard --export html --output nuget-audit --no-open --fail-on vulnerable
-  artifacts:
-    when: always
-    paths: [nuget-audit.html]
-```
-
-```yaml
-# GitHub Actions
-- name: Install NuGetGuard from source
-  run: |
-    git clone --depth 1 https://github.com/MacTii/nuget-guard.git ${{ runner.temp }}/ng
-    dotnet pack ${{ runner.temp }}/ng/src/NuGetGuard/NuGetGuard.csproj -c Release -o ${{ runner.temp }}/ng/artifacts
-    dotnet tool install -g NuGetGuard --add-source ${{ runner.temp }}/ng/artifacts
-- name: Audit packages
-  run: nuget-guard --export csv --output nuget-audit --fail-on vulnerable
-```
-
-Alternatives: commit the packed `.nupkg` into the audited repository next to a tool manifest and a `nuget.config` pointing at that folder (then CI only runs `dotnet tool restore`), or push the package to a private GitLab Package Registry / GitHub Packages NuGet feed.
-
-Scheduled nightly audit (does not block merges, just reports):
-
-```yaml
-nuget-audit-nightly:
-  extends: nuget-audit
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "schedule"
-  script:
-    - dotnet tool install -g NuGetGuard || true
-    - export PATH="$PATH:$HOME/.dotnet/tools"
-    - nuget-guard --export csv --output nuget-audit --fail-on none
-  artifacts:
-    paths:
-      - nuget-audit*.csv
-```
+- **Vendored package** — commit the packed `.nupkg` into your repository together with a tool manifest and a `nuget.config` pointing at that folder; the pipeline then only runs `dotnet tool restore`.
+- **Private feed** — push the package to a GitLab Package Registry or GitHub Packages NuGet feed and install with `--add-source <feed-url>`.
 
 ---
 
