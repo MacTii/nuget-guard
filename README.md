@@ -186,7 +186,7 @@ nuget-audit-nightly:
       - nuget-audit*.csv
 ```
 
-### GitHub Actions
+### GitHub Actions (e.g. `.github/workflows/nuget-audit.yml`)
 
 ```yaml
 - name: Install NuGetGuard
