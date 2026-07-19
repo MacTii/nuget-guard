@@ -18,7 +18,7 @@ public class LicenseCatalogTests
     [InlineData("GPL-3.0-or-later", LicenseRisk.StrongCopyleft)]
     [InlineData("AGPL-3.0", LicenseRisk.StrongCopyleft)]
     public void GetRisk_KnownSpdxIdentifiers_AreClassified(string license, LicenseRisk expected) =>
-        LicenseCatalog.GetRisk(license).Should().Be(expected);
+        LicenseCatalog.GetRisk(license).ShouldBe(expected);
 
     [Theory]
     [InlineData(null)]
@@ -26,17 +26,17 @@ public class LicenseCatalogTests
     [InlineData("Unknown")]
     [InlineData("Some-Proprietary-EULA")]
     public void GetRisk_UnrecognizedValues_AreUnknown(string? license) =>
-        LicenseCatalog.GetRisk(license).Should().Be(LicenseRisk.Unknown);
+        LicenseCatalog.GetRisk(license).ShouldBe(LicenseRisk.Unknown);
 
     [Fact]
     public void GetRisk_CompoundExpression_UsesFuzzyMatch() =>
-        LicenseCatalog.GetRisk("MIT OR Apache-2.0").Should().Be(LicenseRisk.Permissive);
+        LicenseCatalog.GetRisk("MIT OR Apache-2.0").ShouldBe(LicenseRisk.Permissive);
 
     [Fact]
     public void GetRisk_GplExpression_IsStrongCopyleft_ButLgplIsNot()
     {
-        LicenseCatalog.GetRisk("GPL-2.0 WITH Classpath-exception").Should().Be(LicenseRisk.StrongCopyleft);
-        LicenseCatalog.GetRisk("LGPL-2.1-or-later").Should().Be(LicenseRisk.WeakCopyleft);
+        LicenseCatalog.GetRisk("GPL-2.0 WITH Classpath-exception").ShouldBe(LicenseRisk.StrongCopyleft);
+        LicenseCatalog.GetRisk("LGPL-2.1-or-later").ShouldBe(LicenseRisk.WeakCopyleft);
     }
 
     [Theory]
@@ -45,8 +45,9 @@ public class LicenseCatalogTests
     [InlineData("Moq", "BSD-3-Clause")]
     [InlineData("itext7", "AGPL-3.0")]
     [InlineData("hangfire", "LGPL-3.0")]
+    [InlineData("EntityFramework", "MIT")]
     public void GetKnownLicense_ExactMatch_ReturnsLicense(string packageId, string expected) =>
-        LicenseCatalog.GetKnownLicense(packageId).Should().Be(expected);
+        LicenseCatalog.GetKnownLicense(packageId).ShouldBe(expected);
 
     [Theory]
     [InlineData("Microsoft.AspNetCore.Mvc.Core", "MIT")]         // prefix microsoft.aspnetcore.
@@ -54,13 +55,13 @@ public class LicenseCatalogTests
     [InlineData("AWSSDK.KinesisFirehose", "Apache-2.0")]         // prefix awssdk.
     [InlineData("Serilog.Sinks.BrandNew", "Apache-2.0")]         // prefix serilog.
     public void GetKnownLicense_PrefixMatch_ReturnsLicense(string packageId, string expected) =>
-        LicenseCatalog.GetKnownLicense(packageId).Should().Be(expected);
+        LicenseCatalog.GetKnownLicense(packageId).ShouldBe(expected);
 
     [Fact]
     public void GetKnownLicense_MoreSpecificPrefix_WinsOverGeneric()
     {
         // microsoft.aspnetcore. (MIT) must win over microsoft.aspnet. (Apache-2.0)
-        LicenseCatalog.GetKnownLicense("Microsoft.AspNetCore.Http").Should().Be("MIT");
+        LicenseCatalog.GetKnownLicense("Microsoft.AspNetCore.Http").ShouldBe("MIT");
     }
 
     [Theory]
@@ -68,5 +69,5 @@ public class LicenseCatalogTests
     [InlineData("")]
     [InlineData("Some.Totally.Unknown.Package")]
     public void GetKnownLicense_Unknown_ReturnsNull(string? packageId) =>
-        LicenseCatalog.GetKnownLicense(packageId).Should().BeNull();
+        LicenseCatalog.GetKnownLicense(packageId).ShouldBeNull();
 }

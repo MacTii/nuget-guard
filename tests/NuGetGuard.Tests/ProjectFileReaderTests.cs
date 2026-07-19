@@ -29,7 +29,7 @@ public sealed class ProjectFileReaderTests : IDisposable
 
         var packages = ProjectFileReader.ReadDirectPackages(csproj);
 
-        packages.Should().ContainKey("Newtonsoft.Json").WhoseValue.Should().Be("13.0.3");
+        packages.ShouldContainKeyAndValue("Newtonsoft.Json", "13.0.3");
     }
 
     [Fact]
@@ -47,7 +47,7 @@ public sealed class ProjectFileReaderTests : IDisposable
 
         var packages = ProjectFileReader.ReadDirectPackages(csproj);
 
-        packages.Should().ContainKey("Serilog").WhoseValue.Should().Be("3.1.1");
+        packages.ShouldContainKeyAndValue("Serilog", "3.1.1");
     }
 
     [Fact]
@@ -64,8 +64,8 @@ public sealed class ProjectFileReaderTests : IDisposable
 
         var packages = ProjectFileReader.ReadDirectPackages(csproj);
 
-        packages.Should().NotContainKey("Floating");
-        packages.Should().ContainKey("Pinned").WhoseValue.Should().Be("2.0.0");
+        packages.ShouldNotContainKey("Floating");
+        packages.ShouldContainKeyAndValue("Pinned", "2.0.0");
     }
 
     [Fact]
@@ -85,7 +85,7 @@ public sealed class ProjectFileReaderTests : IDisposable
 
         var packages = ProjectFileReader.ReadDirectPackages(csproj);
 
-        packages.Should().ContainKey("log4net").WhoseValue.Should().Be("2.0.15");
+        packages.ShouldContainKeyAndValue("log4net", "2.0.15");
     }
 
     [Fact]
@@ -102,7 +102,7 @@ public sealed class ProjectFileReaderTests : IDisposable
 
         var packages = ProjectFileReader.ReadDirectPackages(csproj, central);
 
-        packages.Should().ContainKey("Polly").WhoseValue.Should().Be("8.4.0");
+        packages.ShouldContainKeyAndValue("Polly", "8.4.0");
     }
 
     [Fact]
@@ -119,8 +119,8 @@ public sealed class ProjectFileReaderTests : IDisposable
 
         var versions = ProjectFileReader.ReadCentralPackageVersions(_dir);
 
-        versions.Should().ContainKey("xunit").WhoseValue.Should().Be("2.9.2");
-        versions.Should().NotContainKey("Floating"); // wildcards skipped
+        versions.ShouldContainKeyAndValue("xunit", "2.9.2");
+        versions.ShouldNotContainKey("Floating"); // wildcards skipped
     }
 
     [Fact]
@@ -129,8 +129,8 @@ public sealed class ProjectFileReaderTests : IDisposable
         var sdk = WriteFile("Sdk\\Sdk.csproj", """<Project Sdk="Microsoft.NET.Sdk"></Project>""");
         var legacy = WriteFile("Old\\Old.csproj", """<Project ToolsVersion="15.0"></Project>""");
 
-        ProjectFileReader.IsSdkStyleProject(new FileInfo(sdk)).Should().BeTrue();
-        ProjectFileReader.IsSdkStyleProject(new FileInfo(legacy)).Should().BeFalse();
+        ProjectFileReader.IsSdkStyleProject(new FileInfo(sdk)).ShouldBeTrue();
+        ProjectFileReader.IsSdkStyleProject(new FileInfo(legacy)).ShouldBeFalse();
     }
 
     [Fact]
@@ -140,8 +140,8 @@ public sealed class ProjectFileReaderTests : IDisposable
         WriteFile("Old\\packages.config", "<packages />");
         var sdk = WriteFile("Sdk\\Sdk.csproj", """<Project Sdk="Microsoft.NET.Sdk"></Project>""");
 
-        ProjectFileReader.IsLegacyProject(new FileInfo(legacy)).Should().BeTrue();
-        ProjectFileReader.IsLegacyProject(new FileInfo(sdk)).Should().BeFalse();
+        ProjectFileReader.IsLegacyProject(new FileInfo(legacy)).ShouldBeTrue();
+        ProjectFileReader.IsLegacyProject(new FileInfo(sdk)).ShouldBeFalse();
     }
 
     [Fact]
@@ -165,7 +165,7 @@ public sealed class ProjectFileReaderTests : IDisposable
 
         var closure = ProjectFileReader.GetProjectReferenceClosure(app);
 
-        closure.Should().BeEquivalentTo([Path.GetFullPath(libA), Path.GetFullPath(libB)]);
-        closure.Should().NotContain(Path.GetFullPath(app));
+        closure.ShouldBe([Path.GetFullPath(libA), Path.GetFullPath(libB)], ignoreOrder: true);
+        closure.ShouldNotContain(Path.GetFullPath(app));
     }
 }

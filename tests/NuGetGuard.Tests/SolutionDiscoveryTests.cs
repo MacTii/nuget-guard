@@ -24,9 +24,9 @@ public sealed class SolutionDiscoveryTests : IDisposable
 
         var context = SolutionDiscovery.Discover(_dir);
 
-        context.Should().NotBeNull();
-        context!.SolutionFile.Name.Should().Be("MyApp.sln");
-        context.ProjectFiles.Should().ContainSingle().Which.Name.Should().Be("App.csproj");
+        context.ShouldNotBeNull();
+        context.SolutionFile.Name.ShouldBe("MyApp.sln");
+        context.ProjectFiles.ShouldHaveSingleItem().Name.ShouldBe("App.csproj");
     }
 
     [Fact]
@@ -37,8 +37,8 @@ public sealed class SolutionDiscoveryTests : IDisposable
 
         var context = SolutionDiscovery.Discover(_dir);
 
-        context.Should().NotBeNull();
-        context!.SolutionFile.Name.Should().Be("Modern.slnx");
+        context.ShouldNotBeNull();
+        context.SolutionFile.Name.ShouldBe("Modern.slnx");
     }
 
     [Fact]
@@ -46,10 +46,10 @@ public sealed class SolutionDiscoveryTests : IDisposable
     {
         WriteFile("App\\App.csproj", """<Project Sdk="Microsoft.NET.Sdk"></Project>""");
 
-        SolutionDiscovery.Discover(_dir).Should().BeNull();
+        SolutionDiscovery.Discover(_dir).ShouldBeNull();
     }
 
     [Fact]
     public void Discover_MissingDirectory_ReturnsNull() =>
-        SolutionDiscovery.Discover(Path.Combine(_dir, "does-not-exist")).Should().BeNull();
+        SolutionDiscovery.Discover(Path.Combine(_dir, "does-not-exist")).ShouldBeNull();
 }

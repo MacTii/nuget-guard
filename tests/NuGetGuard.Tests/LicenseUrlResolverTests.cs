@@ -14,12 +14,12 @@ public class LicenseUrlResolverTests
     [InlineData("http://www.mozilla.org/MPL/2.0/", "MPL-2.0")]
     [InlineData("https://github.com/dotnet/runtime/blob/main/LICENSE.TXT", "MIT")]
     public void ResolveFromUrlPattern_KnownHosts_ReturnSpdx(string url, string expected) =>
-        LicenseUrlResolver.ResolveFromUrlPattern(url).Should().Be(expected);
+        LicenseUrlResolver.ResolveFromUrlPattern(url).ShouldBe(expected);
 
     [Theory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData("https://example.com/eula")]
     public void ResolveFromUrlPattern_UnknownUrls_ReturnNull(string? url) =>
-        LicenseUrlResolver.ResolveFromUrlPattern(url).Should().BeNull();
+        LicenseUrlResolver.ResolveFromUrlPattern(url).ShouldBeNull();
 }

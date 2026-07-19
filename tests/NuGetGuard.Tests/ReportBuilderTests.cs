@@ -23,11 +23,11 @@ public class ReportBuilderTests
 
         var deprecated = ReportBuilder.BuildDeprecated(metadata);
 
-        var item = deprecated.Should().ContainSingle().Subject;
-        item.Package.Should().Be("Old.Package");
-        item.Severity.Should().Be("Legacy");
-        item.Alternative.Should().Be("New.Package [2.0.0, )");
-        item.Projects.Should().Equal("ProjA");
+        var item = deprecated.ShouldHaveSingleItem();
+        item.Package.ShouldBe("Old.Package");
+        item.Severity.ShouldBe("Legacy");
+        item.Alternative.ShouldBe("New.Package [2.0.0, )");
+        item.Projects.ShouldBe(["ProjA"]);
     }
 
     [Fact]
@@ -39,8 +39,8 @@ public class ReportBuilderTests
         };
 
         ReportBuilder.BuildDeprecated(metadata)
-            .Should().ContainSingle()
-            .Which.Alternative.Should().BeNull();
+            .ShouldHaveSingleItem()
+            .Alternative.ShouldBeNull();
     }
 
     [Fact]
@@ -55,9 +55,9 @@ public class ReportBuilderTests
 
         var licenses = ReportBuilder.BuildLicenses(metadata);
 
-        licenses.Select(l => l.Package).Should().Equal("Copyleft.Pkg", "Mystery.Pkg", "Permissive.Pkg");
-        licenses.Select(l => l.Risk).Should().Equal(
-            LicenseRisk.StrongCopyleft, LicenseRisk.Unknown, LicenseRisk.Permissive);
+        licenses.Select(l => l.Package).ShouldBe(["Copyleft.Pkg", "Mystery.Pkg", "Permissive.Pkg"]);
+        licenses.Select(l => l.Risk).ShouldBe(
+            [LicenseRisk.StrongCopyleft, LicenseRisk.Unknown, LicenseRisk.Permissive]);
     }
 
     [Fact]
@@ -74,8 +74,8 @@ public class ReportBuilderTests
             ],
         };
 
-        report.StrongCopyleftCount.Should().Be(1);
-        report.UnknownLicenseCount.Should().Be(1);
+        report.StrongCopyleftCount.ShouldBe(1);
+        report.UnknownLicenseCount.ShouldBe(1);
     }
 
     [Fact]
@@ -85,8 +85,8 @@ public class ReportBuilderTests
 
         item.AddProjects(["App", "app", "Worker", ""]);
 
-        item.Projects.Should().Equal("App", "Worker");
-        item.ProjectsDisplay.Should().Be("App, Worker");
+        item.Projects.ShouldBe(["App", "Worker"]);
+        item.ProjectsDisplay.ShouldBe("App, Worker");
     }
 
     private static PackageMetadata NewMetadata(string id, Action<PackageMetadata> configure)

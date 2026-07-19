@@ -33,12 +33,12 @@ public sealed class CsvExporterTests : IDisposable
         var (issuesPath, licensesPath) = CsvExporter.Export(report, Path.Combine(_dir, "report"));
 
         var issuesLines = File.ReadAllLines(issuesPath);
-        issuesLines[0].Should().Be("Category,Package,Version,Severity,Advisory,Message,Alternative,Projects");
-        issuesLines[1].Should().Contain("\"Contains \"\"quotes\"\", commas\"");
+        issuesLines[0].ShouldBe("Category,Package,Version,Severity,Advisory,Message,Alternative,Projects");
+        issuesLines[1].ShouldContain("\"Contains \"\"quotes\"\", commas\"");
 
         var licenseLines = File.ReadAllLines(licensesPath);
-        licenseLines[0].Should().Be("Package,Version,License,Risk,LicenseUrl,Projects");
-        licenseLines[1].Should().Be("Bad.Pkg,1.0.0,MIT,Permissive,,App");
+        licenseLines[0].ShouldBe("Package,Version,License,Risk,LicenseUrl,Projects");
+        licenseLines[1].ShouldBe("Bad.Pkg,1.0.0,MIT,Permissive,,App");
     }
 
     [Fact]
@@ -61,8 +61,8 @@ public sealed class CsvExporterTests : IDisposable
         var (issuesPath, _) = CsvExporter.Export(report, Path.Combine(_dir, "report"));
         var lines = File.ReadAllLines(issuesPath);
 
-        lines[1].Should().StartWith("Vulnerable,Critical.Pkg");
-        lines[2].Should().StartWith("Vulnerable,Moderate.Pkg");
-        lines[3].Should().StartWith("Outdated,Old.Pkg");
+        lines[1].ShouldStartWith("Vulnerable,Critical.Pkg");
+        lines[2].ShouldStartWith("Vulnerable,Moderate.Pkg");
+        lines[3].ShouldStartWith("Outdated,Old.Pkg");
     }
 }
