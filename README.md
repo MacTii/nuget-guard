@@ -24,6 +24,8 @@
 
 ## 📦 Installation
 
+> **Note:** the package is not on nuget.org yet — publishing it there is planned. Once it lands, installation will be a single `dotnet tool install -g NuGetGuard` (and updates just `dotnet tool update -g NuGetGuard`). Until then, install from source as shown below.
+
 Requires the .NET SDK (8 or newer). Clone, pack, install — takes under a minute:
 
 ```bash
@@ -145,7 +147,7 @@ nuget-guard --skip-redundant
 
 ## 🏗️ CI/CD
 
-The pipeline builds the tool straight from this repository, so no package feed is required.
+The pipeline builds the tool straight from this repository, so no package feed is required. Once the package is published to nuget.org, the clone + pack + install steps below collapse into a single `dotnet tool install -g NuGetGuard`.
 
 ### GitLab CI (`.gitlab-ci.yml`)
 
