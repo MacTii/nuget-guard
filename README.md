@@ -187,6 +187,39 @@ nuget-audit:
   allow_failure: false       # a vulnerable package fails the pipeline
 ```
 
+### Without publishing to nuget.org
+
+CI does not require the package on nuget.org — any pipeline can build the tool from this repository:
+
+```yaml
+# GitLab CI
+nuget-audit:
+  stage: test
+  image: mcr.microsoft.com/dotnet/sdk:8.0
+  script:
+    - git clone --depth 1 https://github.com/MacTii/nuget-guard.git /tmp/ng
+    - dotnet pack /tmp/ng/src/NuGetGuard/NuGetGuard.csproj -c Release -o /tmp/ng/artifacts
+    - dotnet tool install -g NuGetGuard --add-source /tmp/ng/artifacts
+    - export PATH="$PATH:/root/.dotnet/tools"
+    - nuget-guard --export html --output nuget-audit --no-open --fail-on vulnerable
+  artifacts:
+    when: always
+    paths: [nuget-audit.html]
+```
+
+```yaml
+# GitHub Actions
+- name: Install NuGetGuard from source
+  run: |
+    git clone --depth 1 https://github.com/MacTii/nuget-guard.git ${{ runner.temp }}/ng
+    dotnet pack ${{ runner.temp }}/ng/src/NuGetGuard/NuGetGuard.csproj -c Release -o ${{ runner.temp }}/ng/artifacts
+    dotnet tool install -g NuGetGuard --add-source ${{ runner.temp }}/ng/artifacts
+- name: Audit packages
+  run: nuget-guard --export csv --output nuget-audit --fail-on vulnerable
+```
+
+Alternatives: commit the packed `.nupkg` into the audited repository next to a tool manifest and a `nuget.config` pointing at that folder (then CI only runs `dotnet tool restore`), or push the package to a private GitLab Package Registry / GitHub Packages NuGet feed.
+
 Scheduled nightly audit (does not block merges, just reports):
 
 ```yaml
