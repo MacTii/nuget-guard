@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Text.Json;
 using NuGet.Versioning;
 using NuGetGuard.Models;
+using NuGetGuard.Services.NuGetApi.Models;
 
 namespace NuGetGuard.Services.NuGetApi;
 

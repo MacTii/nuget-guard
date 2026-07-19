@@ -1,3 +1,3 @@
-namespace NuGetGuard.Services.DotNet;
+﻿namespace NuGetGuard.Services.DotNet.Models;
 
 public sealed record DotnetJsonResult(DotnetListReport? Report, bool HasError);

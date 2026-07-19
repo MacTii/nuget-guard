@@ -1,6 +1,6 @@
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
-namespace NuGetGuard.Services.NuGetApi;
+namespace NuGetGuard.Services.NuGetApi.Models;
 
 /// <summary>Root of a NuGet registration index (per package id).</summary>
 internal sealed class RegistrationIndex

@@ -1,6 +1,6 @@
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
-namespace NuGetGuard.Services.NuGetApi;
+namespace NuGetGuard.Services.NuGetApi.Models;
 
 /// <summary>Version list from the NuGet flat-container endpoint.</summary>
 internal sealed class FlatContainerIndex

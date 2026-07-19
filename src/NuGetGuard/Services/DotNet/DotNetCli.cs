@@ -1,4 +1,5 @@
 using System.Text.Json;
+using NuGetGuard.Services.DotNet.Models;
 
 namespace NuGetGuard.Services.DotNet;
 

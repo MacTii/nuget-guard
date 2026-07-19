@@ -1,6 +1,7 @@
 using NuGet.Versioning;
 using NuGetGuard.Models;
 using NuGetGuard.Services.DotNet;
+using NuGetGuard.Services.DotNet.Models;
 using NuGetGuard.Services.NuGetApi;
 
 namespace NuGetGuard.Services;

@@ -1,6 +1,6 @@
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
-namespace NuGetGuard.Services.DotNet;
+namespace NuGetGuard.Services.DotNet.Models;
 
 public sealed class DotnetProject
 {
