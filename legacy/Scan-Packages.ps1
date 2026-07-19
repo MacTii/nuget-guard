@@ -1,5 +1,11 @@
 ﻿# Scan-Packages.ps1
 #
+# LEGACY: this script has been superseded by the NuGetGuard .NET tool (see /src)
+# and is no longer actively developed. It still works, but lacks newer features:
+# Central Package Management, .slnx solutions, outdated detection for
+# packages.config projects, CI exit codes (--fail-on) and parallel metadata fetch.
+# Prefer: dotnet tool install -g NuGetGuard
+#
 # .\Scan-Packages.ps1
 # .\Scan-Packages.ps1 -Export CSV
 # .\Scan-Packages.ps1 -Export HTML

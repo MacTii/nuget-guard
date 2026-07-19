@@ -218,9 +218,12 @@ nuget-guard/
 │   ├── Reporting/             # console / CSV / HTML output
 │   └── Models/                # report model (one type per file)
 ├── tests/NuGetGuard.Tests/    # xUnit unit tests (pure logic, no network)
-├── Scan-Packages.ps1          # legacy PowerShell version (same features)
+├── legacy/
+│   └── Scan-Packages.ps1      # original PowerShell version — superseded by the tool, kept for reference
 └── README.md
 ```
+
+> The PowerShell script is no longer developed — it lacks Central Package Management, `.slnx`, outdated detection for `packages.config` projects and CI exit codes. Use the `nuget-guard` tool instead.
 
 ---
 
