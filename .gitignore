@@ -1,0 +1,7 @@
+bin/
+obj/
+artifacts/
+*.user
+.vs/
+nuget-report*.html
+nuget-report*.csv
