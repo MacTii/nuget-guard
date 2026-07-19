@@ -1,0 +1,55 @@
+using NuGetGuard.Services;
+
+namespace NuGetGuard.Tests;
+
+public sealed class SolutionDiscoveryTests : IDisposable
+{
+    private readonly string _dir = Directory.CreateTempSubdirectory("nuget-guard-discovery").FullName;
+
+    public void Dispose() => Directory.Delete(_dir, recursive: true);
+
+    private void WriteFile(string relativePath, string content = "")
+    {
+        var path = Path.Combine(_dir, relativePath);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, content);
+    }
+
+    [Fact]
+    public void Discover_FindsSolutionAndProjects_IgnoringBinObj()
+    {
+        WriteFile("MyApp.sln");
+        WriteFile("App\\App.csproj", """<Project Sdk="Microsoft.NET.Sdk"></Project>""");
+        WriteFile("App\\bin\\Debug\\Generated.csproj", "<Project></Project>");
+
+        var context = SolutionDiscovery.Discover(_dir);
+
+        context.Should().NotBeNull();
+        context!.SolutionFile.Name.Should().Be("MyApp.sln");
+        context.ProjectFiles.Should().ContainSingle().Which.Name.Should().Be("App.csproj");
+    }
+
+    [Fact]
+    public void Discover_FindsSlnxSolutions()
+    {
+        WriteFile("Modern.slnx", "<Solution />");
+        WriteFile("App\\App.csproj", """<Project Sdk="Microsoft.NET.Sdk"></Project>""");
+
+        var context = SolutionDiscovery.Discover(_dir);
+
+        context.Should().NotBeNull();
+        context!.SolutionFile.Name.Should().Be("Modern.slnx");
+    }
+
+    [Fact]
+    public void Discover_NoSolution_ReturnsNull()
+    {
+        WriteFile("App\\App.csproj", """<Project Sdk="Microsoft.NET.Sdk"></Project>""");
+
+        SolutionDiscovery.Discover(_dir).Should().BeNull();
+    }
+
+    [Fact]
+    public void Discover_MissingDirectory_ReturnsNull() =>
+        SolutionDiscovery.Discover(Path.Combine(_dir, "does-not-exist")).Should().BeNull();
+}
