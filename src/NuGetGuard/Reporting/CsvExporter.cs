@@ -8,38 +8,11 @@ public static class CsvExporter
     /// <summary>Writes the issues CSV and the licenses CSV. Returns both file paths.</summary>
     public static (string IssuesPath, string LicensesPath) Export(ScanReport report, string outputFile)
     {
-        var unused = report.Unused.SelectMany(group => group.Items.Select(item =>
-        {
-            var row = new ReportItem
-            {
-                Category = "Unused",
-                Package = item.Package,
-                Version = item.Version,
-                Message = $"No code references {item.Namespaces}",
-            };
-            row.AddProjects([group.ProjectName]);
-            return row;
-        }));
-
-        var redundant = report.Redundant.SelectMany(group => group.Items.Select(item =>
-        {
-            var row = new ReportItem
-            {
-                Category = "Redundant",
-                Package = item.Package,
-                Version = item.Version,
-                Message = $"Already pulled in by {item.CoveredBy} {item.CoveredByVersion}".Trim(),
-                Alternative = item.CoveredBySource,
-            };
-            row.AddProjects([group.ProjectName]);
-            return row;
-        }));
-
         var flat = report.Vulnerable
             .Concat(report.Deprecated)
             .Concat(report.Outdated)
-            .Concat(redundant)
-            .Concat(unused)
+            .Concat(RedundantRows(report))
+            .Concat(UnusedRows(report))
             .ToList();
 
         var sorted = flat
@@ -71,6 +44,33 @@ public static class CsvExporter
         File.WriteAllText(licensesPath, licenses.ToString(), Encoding.UTF8);
 
         return (issuesPath, licensesPath);
+    }
+
+    private static IEnumerable<ReportItem> RedundantRows(ScanReport report) =>
+        report.Redundant.SelectMany(group => group.Items.Select(item => NewRow(
+            "Redundant", item.Package, item.Version, group.ProjectName,
+            message: $"Already pulled in by {item.CoveredBy} {item.CoveredByVersion}".Trim(),
+            alternative: item.CoveredBySource)));
+
+    private static IEnumerable<ReportItem> UnusedRows(ScanReport report) =>
+        report.Unused.SelectMany(group => group.Items.Select(item => NewRow(
+            "Unused", item.Package, item.Version, group.ProjectName,
+            message: $"No code references {item.Namespaces}")));
+
+    private static ReportItem NewRow(
+        string category, string package, string version, string project,
+        string? message = null, string? alternative = null)
+    {
+        var row = new ReportItem
+        {
+            Category = category,
+            Package = package,
+            Version = version,
+            Message = message,
+            Alternative = alternative,
+        };
+        row.AddProjects([project]);
+        return row;
     }
 
     private static string Line(params string?[] values) =>

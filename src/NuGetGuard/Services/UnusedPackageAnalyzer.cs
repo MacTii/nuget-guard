@@ -127,20 +127,10 @@ public sealed class UnusedPackageAnalyzer
         IReadOnlyDictionary<string, string> packages, string? packagesFolder)
     {
         var transitive = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        if (packagesFolder is null)
-            return transitive;
 
         foreach (var (id, version) in packages)
         {
-            var packageDir = Path.Combine(packagesFolder, $"{id}.{version}");
-            if (!Directory.Exists(packageDir))
-                continue;
-
-            var nuspec = Directory.EnumerateFiles(packageDir, "*.nuspec", SearchOption.AllDirectories).FirstOrDefault();
-            if (nuspec is null)
-                continue;
-
-            foreach (var dependency in NuspecDependencyReader.ReadDependencyIds(nuspec))
+            foreach (var dependency in NuspecDependencyReader.ReadDependencyIds(packagesFolder, id, version))
                 transitive.Add(dependency);
         }
 

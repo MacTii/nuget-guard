@@ -142,20 +142,9 @@ public sealed class RedundancyAnalyzer(NuGetClient nuget)
         string id, string version, string? packagesFolder, CancellationToken ct)
     {
         // 1. Local nuspec from packages folder (legacy projects) — no HTTP
-        if (packagesFolder is not null)
-        {
-            var packageDir = Path.Combine(packagesFolder, $"{id}.{version}");
-            if (Directory.Exists(packageDir))
-            {
-                var nuspec = Directory.EnumerateFiles(packageDir, "*.nuspec", SearchOption.AllDirectories).FirstOrDefault();
-                if (nuspec is not null)
-                {
-                    var deps = NuspecDependencyReader.ReadDependencyIds(nuspec);
-                    if (deps.Count > 0)
-                        return deps;
-                }
-            }
-        }
+        var local = NuspecDependencyReader.ReadDependencyIds(packagesFolder, id, version);
+        if (local.Count > 0)
+            return local;
 
         // 2. NuGet registration API fallback (cached inside NuGetClient)
         return await nuget.GetDependencyIdsAsync(id, version, ct);

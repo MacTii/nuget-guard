@@ -6,6 +6,4 @@ public sealed class CollectedPackage
     public required string Id { get; init; }
     public required string Version { get; init; }
     public HashSet<string> Projects { get; } = new(StringComparer.OrdinalIgnoreCase);
-
-    public string Key => $"{Id}|{Version}";
 }

@@ -2,10 +2,27 @@ using System.Xml.Linq;
 
 namespace NuGetGuard.Services;
 
-/// <summary>Reads dependency ids from a local .nuspec file (legacy packages/ folder).</summary>
+/// <summary>Reads dependency ids from the .nuspec of a package restored into the legacy packages/ folder.</summary>
 public static class NuspecDependencyReader
 {
-    public static List<string> ReadDependencyIds(string nuspecPath)
+    /// <summary>
+    /// Dependencies declared by a restored package. Empty when there is no legacy packages folder,
+    /// the package is not restored there, or its .nuspec cannot be read.
+    /// </summary>
+    public static IReadOnlyList<string> ReadDependencyIds(string? packagesFolder, string id, string version)
+    {
+        if (packagesFolder is null)
+            return [];
+
+        var packageDir = Path.Combine(packagesFolder, $"{id}.{version}");
+        if (!Directory.Exists(packageDir))
+            return [];
+
+        var nuspec = Directory.EnumerateFiles(packageDir, "*.nuspec", SearchOption.AllDirectories).FirstOrDefault();
+        return nuspec is null ? [] : ReadDependencyIds(nuspec);
+    }
+
+    private static List<string> ReadDependencyIds(string nuspecPath)
     {
         var deps = new List<string>();
         XDocument nuspec;
