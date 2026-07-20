@@ -25,7 +25,9 @@ Works with SDK-style projects, legacy `packages.config` (.NET Framework), Centra
 
 ## 📦 Install
 
-Not on nuget.org yet — install from source (needs .NET SDK 8+):
+> **Not published to nuget.org yet** — `dotnet tool install -g NuGetGuard` will not find the package. Publishing is planned; once it lands, installing and updating becomes a single command. Until then, install from source.
+
+Needs the .NET SDK 8 or newer:
 
 ```bash
 git clone https://github.com/MacTii/nuget-guard.git
@@ -188,9 +190,19 @@ Alternatives: commit the `.nupkg` next to a tool manifest and run `dotnet tool r
 ## 📁 Structure
 
 ```
-src/NuGetGuard/          # tool source (Commands, Services, Reporting, Models)
-tests/NuGetGuard.Tests/  # unit tests — no network required
-legacy/                  # original PowerShell script, superseded and no longer developed
+nuget-guard/
+├── NuGetGuard.slnx
+├── src/NuGetGuard/            # tool source
+│   ├── Commands/              # CLI layer (Spectre.Console.Cli)
+│   ├── Services/              # scanning, licenses, redundancy, unused detection
+│   │   ├── DotNet/            # dotnet / nuget.exe integration + JSON models
+│   │   └── NuGetApi/          # NuGet registration API client + models
+│   ├── Reporting/             # console / CSV / HTML output
+│   └── Models/                # report model
+├── tests/NuGetGuard.Tests/    # unit tests — no network required
+├── legacy/
+│   └── Scan-Packages.ps1      # original PowerShell version, no longer developed
+└── README.md
 ```
 
 Build and test locally with `dotnet test`.
