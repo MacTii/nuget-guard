@@ -189,6 +189,8 @@ public static class ConsoleReporter
             ? "  [yellow]Outdated        : ⚠️  scan failed (build errors)[/]"
             : $"  Outdated        : {(report.Outdated.Count > 0 ? $"📦 {report.Outdated.Count}" : "✅ 0")}");
         AnsiConsole.MarkupLine(
+            $"  Redundant       : {(report.RedundantCount > 0 ? $"🔗 {report.RedundantCount}" : "✅ 0")}");
+        AnsiConsole.MarkupLine(
             $"  Possibly unused : {(report.UnusedCount > 0 ? $"🧹 {report.UnusedCount}" : "✅ 0")}");
         AnsiConsole.MarkupLine(
             $"  Licenses total  : {report.Licenses.Count}  (🔴 StrongCopyleft: {report.StrongCopyleftCount}  ⚪ Unknown: {report.UnknownLicenseCount})");

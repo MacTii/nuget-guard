@@ -18,8 +18,9 @@ public static class Rankings
         "Vulnerable" => 0,
         "Deprecated" => 1,
         "Outdated" => 2,
-        "Unused" => 3,
-        _ => 4,
+        "Redundant" => 3,
+        "Unused" => 4,
+        _ => 5,
     };
 
     public static string SeverityLabel(int value) => value switch

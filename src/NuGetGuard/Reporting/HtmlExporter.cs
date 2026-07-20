@@ -12,6 +12,7 @@ public static class HtmlExporter
         var generatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
 
         var flat = report.Vulnerable.Concat(report.Deprecated).Concat(report.Outdated).ToList();
+        var redundantRows = BuildRedundantRows(report);
         var unusedRows = BuildUnusedRows(report);
         var allResults = flat
             .OrderBy(r => Rankings.CategoryOrder(r.Category))
@@ -127,6 +128,7 @@ public static class HtmlExporter
             <div class="card"><div class="num" style="color:#3498db">{{outdatedNum}}</div><div class="lbl">Outdated</div></div>
             <div class="card"><div class="num" style="color:#e74c3c">{{report.StrongCopyleftCount}}</div><div class="lbl">Strong Copyleft</div></div>
             <div class="card"><div class="num" style="color:#aaa">{{report.UnknownLicenseCount}}</div><div class="lbl">Unknown License</div></div>
+            <div class="card"><div class="num" style="color:#9b59b6">{{report.RedundantCount}}</div><div class="lbl">Redundant</div></div>
             <div class="card"><div class="num" style="color:#16a085">{{report.UnusedCount}}</div><div class="lbl">Possibly Unused</div></div>
             </div>
 
@@ -152,6 +154,8 @@ public static class HtmlExporter
             </tbody>
             </table>
 
+            {{redundantRows}}
+
             {{unusedRows}}
 
             </body>
@@ -160,6 +164,44 @@ public static class HtmlExporter
 
         File.WriteAllText(htmlPath, html, Encoding.UTF8);
         return htmlPath;
+    }
+
+    private static string BuildRedundantRows(ScanReport report)
+    {
+        if (report.Redundant.Count == 0)
+            return "";
+
+        var rows = new StringBuilder();
+        foreach (var group in report.Redundant)
+        {
+            var projectLabel = group.IsLegacy ? $"{group.ProjectName} (legacy)" : group.ProjectName;
+
+            foreach (var item in group.Items)
+            {
+                rows.AppendLine($"""
+                    <tr>
+                    <td class='projects'>{Encode(projectLabel)}</td>
+                    <td><strong>{Encode(item.Package)}</strong></td>
+                    <td><code>{Encode(item.Version)}</code></td>
+                    <td>{Encode(item.CoveredBy)} <code>{Encode(item.CoveredByVersion)}</code></td>
+                    <td class='projects'>{Encode(item.CoveredBySource)}</td>
+                    </tr>
+                    """);
+            }
+        }
+
+        return $"""
+            <h2>🔗 Redundant Packages</h2>
+            <div class='build-error'>ℹ️ These direct references are already pulled in transitively by another package or a referenced project. In <code>packages.config</code> projects the full closure is listed by design, so entries there are informational only.</div>
+            <table>
+            <thead>
+            <tr><th>Project</th><th>Package</th><th>Version</th><th>Already pulled in by</th><th>Source</th></tr>
+            </thead>
+            <tbody>
+            {rows}
+            </tbody>
+            </table>
+            """;
     }
 
     private static string BuildUnusedRows(ScanReport report)

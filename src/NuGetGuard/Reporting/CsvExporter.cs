@@ -21,7 +21,26 @@ public static class CsvExporter
             return row;
         }));
 
-        var flat = report.Vulnerable.Concat(report.Deprecated).Concat(report.Outdated).Concat(unused).ToList();
+        var redundant = report.Redundant.SelectMany(group => group.Items.Select(item =>
+        {
+            var row = new ReportItem
+            {
+                Category = "Redundant",
+                Package = item.Package,
+                Version = item.Version,
+                Message = $"Already pulled in by {item.CoveredBy} {item.CoveredByVersion}".Trim(),
+                Alternative = item.CoveredBySource,
+            };
+            row.AddProjects([group.ProjectName]);
+            return row;
+        }));
+
+        var flat = report.Vulnerable
+            .Concat(report.Deprecated)
+            .Concat(report.Outdated)
+            .Concat(redundant)
+            .Concat(unused)
+            .ToList();
 
         var sorted = flat
             .OrderBy(r => Rankings.CategoryOrder(r.Category))

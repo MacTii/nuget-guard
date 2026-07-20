@@ -16,4 +16,5 @@ public sealed class ScanReport
     public int StrongCopyleftCount => Licenses.Count(l => l.Risk == LicenseRisk.StrongCopyleft);
     public int UnknownLicenseCount => Licenses.Count(l => l.Risk == LicenseRisk.Unknown);
     public int UnusedCount => Unused.Sum(g => g.Items.Count);
+    public int RedundantCount => Redundant.Sum(g => g.Items.Count);
 }
