@@ -14,7 +14,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>nuget-guard</ToolCommandName>
     <PackageId>NuGetGuard</PackageId>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <Authors>MacTii</Authors>
     <Description>Audits NuGet packages in .NET solutions — finds vulnerable, deprecated, outdated and redundant dependencies, and classifies license risk. Exports HTML/CSV reports.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
