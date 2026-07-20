@@ -89,6 +89,18 @@ public sealed class UnusedPackageAnalyzerTests : IDisposable
     }
 
     [Fact]
+    public void Analyze_LegacyProjectWithoutRestoredPackagesFolder_IsSkipped()
+    {
+        var solution = BuildSolution("using System;\n\nclass Program { static void Main() { } }");
+
+        // Without the restored packages/ folder the transitive filter cannot run,
+        // so every packages.config entry would look unused.
+        Directory.Delete(Path.Combine(_dir, "packages"), recursive: true);
+
+        Analyze(solution).ShouldBeEmpty();
+    }
+
+    [Fact]
     public void Analyze_ProjectWithoutSource_IsSkipped()
     {
         var solution = BuildSolution("");

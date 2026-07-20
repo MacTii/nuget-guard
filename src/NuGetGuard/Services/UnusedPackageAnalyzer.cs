@@ -73,7 +73,12 @@ public sealed class UnusedPackageAnalyzer
         var isLegacy = ProjectFileReader.IsLegacyProject(project);
 
         // packages.config lists the full dependency closure, so anything another listed package
-        // pulls in is not a real direct reference and must not be judged on its own.
+        // pulls in is not a real direct reference and must not be judged on its own. That filter
+        // reads the restored .nuspec files — without them every transitive package would be
+        // reported, so the whole project is skipped rather than drowned in false positives.
+        if (isLegacy && packagesFolder is null)
+            return null;
+
         var pulledInByOthers = isLegacy
             ? CollectTransitiveIds(direct, packagesFolder)
             : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
