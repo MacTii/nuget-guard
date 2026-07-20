@@ -79,8 +79,15 @@ nuget-guard --fail-on vulnerable             # CI: non-zero exit on findings
 | `--skip-unused` | `false` | Skip unused-package analysis |
 | `--no-open` | `false` | Don't open the HTML report |
 
-**Exit codes:** `0` clean · `1` `--fail-on` triggered · `2` no solution found.
-`--fail-on Any` covers everything except unused, which is heuristic and must be requested explicitly.
+**Exit codes**
+
+| Code | Meaning |
+|---|---|
+| `0` | Clean, or no `--fail-on` match |
+| `1` | `--fail-on` condition triggered |
+| `2` | No solution found |
+
+`--fail-on Any` covers vulnerable, deprecated, outdated and strong-copyleft findings. Unused packages are excluded — that check is heuristic, so request it explicitly with `--fail-on Unused`.
 
 **Reports** are written relative to the current directory: `<output>.html`, or `<output>.csv` + `<output>-licenses.csv`.
 
