@@ -127,9 +127,15 @@ Opposite packages: Newtonsoft *is* used but needn't be listed; WebApi.Client *is
      Projects : MyApp.Api, MyApp.Worker
 
 ━━━ ⚠️ DEPRECATED PACKAGES ━━━
-  📦 Microsoft.AspNet.WebApi.Client 5.2.9
+  📦 EntityFramework 6.2.0
      Reason      : Legacy
-     Alternative : System.Net.Http.Json [6.0.0, )
+     Alternative : EntityFramework [6.5.1, )
+     Projects    : MyApp.Data
+
+━━━ 📦 OUTDATED PACKAGES ━━━
+  📦 Serilog 3.0.1
+     Latest: 4.4.0
+     Projects: MyApp.Api, MyApp.Worker
 
 ━━━ 📜 LICENSE AUDIT ━━━
   🔴 StrongCopyleft (1)
@@ -152,7 +158,7 @@ Opposite packages: Newtonsoft *is* used but needn't be listed; WebApi.Client *is
   Licenses total  : 12  (🔴 StrongCopyleft: 1  ⚪ Unknown: 1)
 ```
 
-All sections also appear in the HTML and CSV exports.
+All sections also appear in the HTML and CSV exports. Alternatives are shown in NuGet version-range notation, so `[6.5.1, )` means 6.5.1 or newer.
 
 ---
 
