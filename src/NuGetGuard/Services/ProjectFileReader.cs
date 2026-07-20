@@ -97,6 +97,27 @@ public static class ProjectFileReader
     }
 
     /// <summary>
+    /// Namespaces declared as global usings in the project file (<c>&lt;Using Include="X" /&gt;</c>).
+    /// They never appear in the source files, yet every file can use them.
+    /// </summary>
+    public static IEnumerable<string> GetGlobalUsings(string projectPath)
+    {
+        if (!File.Exists(projectPath))
+            yield break;
+
+        XDocument xml;
+        try { xml = XDocument.Load(projectPath); }
+        catch { yield break; }
+
+        foreach (var item in xml.Descendants().Where(e => e.Name.LocalName == "Using"))
+        {
+            var include = (string?)item.Attribute("Include");
+            if (!string.IsNullOrEmpty(include))
+                yield return include;
+        }
+    }
+
+    /// <summary>
     /// File paths explicitly listed in the project (Compile/Content/None items), resolved to absolute paths.
     /// Legacy projects enumerate every file, and both formats use this for linked files living outside
     /// the project folder.

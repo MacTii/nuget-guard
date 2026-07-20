@@ -64,6 +64,13 @@ public static class SourceNamespaceScanner
         return used;
     }
 
+    /// <summary>Adds namespaces that are not written in the source, such as MSBuild global usings.</summary>
+    public static void AddNamespaces(HashSet<string> used, IEnumerable<string> namespaces)
+    {
+        foreach (var ns in namespaces)
+            AddWithPrefixes(used, ns);
+    }
+
     /// <summary>Source files belonging to a project: everything under its folder, minus build output.</summary>
     public static IEnumerable<string> EnumerateSourceFiles(string projectDirectory)
     {

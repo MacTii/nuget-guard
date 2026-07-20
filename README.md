@@ -4,7 +4,14 @@
 
 ![.NET 8+](https://img.shields.io/badge/.NET-8%2B-512BD4?logo=dotnet)
 ![dotnet tool](https://img.shields.io/badge/dotnet-tool-0075ca)
+![nuget.org](https://img.shields.io/badge/nuget.org-not%20published-lightgrey?logo=nuget)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green)
+
+<!-- After publishing to nuget.org, replace the static nuget.org badge above with the live ones:
+     ![NuGet](https://img.shields.io/nuget/v/NuGetGuard?logo=nuget)
+     ![Downloads](https://img.shields.io/nuget/dt/NuGetGuard?logo=nuget)
+     They render "package not found" until the package actually exists. -->
+
 
 ---
 

@@ -10,7 +10,7 @@ public sealed class UnusedPackageAnalyzerTests : IDisposable
     public void Dispose() => Directory.Delete(_dir, recursive: true);
 
     /// <summary>Builds a legacy solution whose only package ships the tool's own assembly.</summary>
-    private SolutionContext BuildSolution(string programContents)
+    private SolutionContext BuildSolution(string programContents, string projectContents = """<Project ToolsVersion="15.0"><ItemGroup /></Project>""")
     {
         var solutionPath = Path.Combine(_dir, "Sample.sln");
         File.WriteAllText(solutionPath, "");
@@ -19,7 +19,7 @@ public sealed class UnusedPackageAnalyzerTests : IDisposable
         Directory.CreateDirectory(projectDir);
 
         var projectPath = Path.Combine(projectDir, "App.csproj");
-        File.WriteAllText(projectPath, """<Project ToolsVersion="15.0"><ItemGroup /></Project>""");
+        File.WriteAllText(projectPath, projectContents);
         File.WriteAllText(Path.Combine(projectDir, "packages.config"), """
             <?xml version="1.0" encoding="utf-8"?>
             <packages>
@@ -68,6 +68,22 @@ public sealed class UnusedPackageAnalyzerTests : IDisposable
     public void Analyze_FullyQualifiedUsage_CountsAsUsed()
     {
         var solution = BuildSolution("class Program { static void Main() { var x = NuGetGuard.Models.LicenseRisk.Permissive; } }");
+
+        Analyze(solution).ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void Analyze_GlobalUsingInProjectFile_CountsAsUsed()
+    {
+        var solution = BuildSolution(
+            "class Program { static void Main() { } }",
+            """
+            <Project ToolsVersion="15.0">
+              <ItemGroup>
+                <Using Include="NuGetGuard.Services" />
+              </ItemGroup>
+            </Project>
+            """);
 
         Analyze(solution).ShouldBeEmpty();
     }

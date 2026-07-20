@@ -67,6 +67,9 @@ public sealed class UnusedPackageAnalyzer
         if (usedNamespaces.Count == 0)
             return null;
 
+        // Global usings live in the project file, so no source file mentions them
+        SourceNamespaceScanner.AddNamespaces(usedNamespaces, ProjectFileReader.GetGlobalUsings(project.FullName));
+
         var isLegacy = ProjectFileReader.IsLegacyProject(project);
 
         // packages.config lists the full dependency closure, so anything another listed package
