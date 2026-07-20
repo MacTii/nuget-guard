@@ -14,7 +14,7 @@
 - **Deprecated packages** — queries the NuGet API and shows the recommended alternative
 - **Outdated packages** — shows the latest available version for every package behind
 - **License audit** — resolves SPDX licenses (expression → known-package DB → license URL content) and classifies risk: 🟢 Permissive / 🟡 Weak copyleft / 🔴 Strong copyleft
-- **Redundant packages** — Snitch-like analysis: direct references already covered transitively by another package or a referenced project
+- **Redundant packages** — Snitch-like analysis: direct references another package or a referenced project already pulls in, so the line in the project file is superfluous
 - **Unused packages** — reads the namespaces each package actually ships and reports those never referenced anywhere in the source (heuristic — see below)
 - **Export to HTML** — polished report, auto-opens in your browser
 - **Export to CSV** — ready for Excel or CI artifact upload
@@ -97,7 +97,29 @@ nuget-guard --skip-redundant
 
 **Exit codes:** `0` — OK (or no `--fail-on` match) · `1` — `--fail-on` condition triggered · `2` — no solution found
 
-**Where reports are written:** `--output` is resolved against the *current working directory* (unless you pass an absolute path). `--export html` produces `<output>.html`; `--export csv` produces `<output>.csv` (issues) and `<output>-licenses.csv` (license audit). Default name is `nuget-report`.
+**Where reports are written:** `--output` is resolved against the *current working directory* (unless you pass an absolute path). `--export html` produces `<output>.html`; `--export csv` produces `<output>.csv` (vulnerable, deprecated, outdated, redundant and unused findings in one `Category` column) and `<output>-licenses.csv` (license audit). Default name is `nuget-report`.
+
+### 🔗 Redundant vs 🧹 unused — two different questions
+
+They are reported separately because a package can be one without being the other.
+
+| | 🔗 Redundant | 🧹 Possibly unused |
+|---|---|---|
+| Question | Does this reference need to be in the project file? | Does any code touch this package? |
+| Method | Walks the dependency graph | Reads package namespaces, scans source |
+| Meaning | Another direct reference (or a referenced project) already pulls it in | No namespace the package ships appears anywhere in the source |
+| Typical fix | Drop the line from the project file — the package stays available | Remove the package, after checking it is not wired up indirectly |
+
+A worked example, both findings from the same project:
+
+```
+🔗 Redundant:  Newtonsoft.Json          ← already pulled in by Microsoft.AspNet.WebApi.Client
+🧹 Unused:     Microsoft.AspNet.WebApi.Client  ← nothing in the code calls it
+```
+
+They point at opposite packages: `Newtonsoft.Json` *is* used by the code, its reference is merely superfluous; `WebApi.Client` *is* needed as the source of Newtonsoft, yet its own API is never called.
+
+**How redundancy is detected:** for every direct reference the tool resolves the full transitive closure of the other direct references (from local `.nuspec` files, falling back to the NuGet API) and reports the ones already covered. In `packages.config` projects the file lists the whole closure by design, so those findings are informational — there is nothing to remove. Run `--skip-redundant` to turn the check off.
 
 **How unused packages are detected:** for every direct reference the tool reads the namespaces exported by the package's own assemblies (metadata only — nothing is loaded or executed) and checks whether any of them appears in the project's source files, including Razor views. A package is reported only when none of its namespaces is referenced anywhere.
 
@@ -154,9 +176,12 @@ Deliberately conservative, so that a package in use is never called unused: buil
   Vulnerable      : 🚨 1
   Deprecated      : ⚠️ 1
   Outdated        : 📦 5
+  Redundant       : 🔗 1
   Possibly unused : 🧹 1
   Licenses total  : 12  (🔴 StrongCopyleft: 0  ⚪ Unknown: 1)
 ```
+
+Every section above also lands in the HTML and CSV exports.
 
 ---
 
