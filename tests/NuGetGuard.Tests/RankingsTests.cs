@@ -19,7 +19,8 @@ public class RankingsTests
     [InlineData("Vulnerable", 0)]
     [InlineData("Deprecated", 1)]
     [InlineData("Outdated", 2)]
-    [InlineData("Other", 3)]
+    [InlineData("Unused", 3)]
+    [InlineData("Other", 4)]
     public void CategoryOrder_RanksVulnerableFirst(string category, int expected) =>
         Rankings.CategoryOrder(category).ShouldBe(expected);
 

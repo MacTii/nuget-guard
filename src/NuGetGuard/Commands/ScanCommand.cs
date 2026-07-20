@@ -44,6 +44,9 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
         var redundant = settings.SkipRedundant
             ? []
             : await AnalyzeRedundantWithProgressAsync(nuget, solution, allPackages);
+        var unused = settings.SkipUnused
+            ? []
+            : AnalyzeUnusedWithProgress(solution);
 
         var report = new ScanReport
         {
@@ -54,6 +57,7 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
             OutdatedScanFailed = outdatedFailed,
             Licenses = ReportBuilder.BuildLicenses(metadata),
             Redundant = redundant,
+            Unused = unused,
             SkippedProjects = skippedProjects,
         };
 
@@ -127,6 +131,23 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
                 result = await analyzer.AnalyzeAsync(
                     solution, allPackages,
                     projectName => statusContext.Status($"Analyzing transitive deps: {Markup.Escape(projectName)}"));
+            });
+
+        return result;
+    }
+
+    private static List<UnusedProjectGroup> AnalyzeUnusedWithProgress(SolutionContext solution)
+    {
+        var analyzer = new UnusedPackageAnalyzer();
+        List<UnusedProjectGroup> result = [];
+
+        AnsiConsole.Status()
+            .Spinner(Spinner.Known.Dots)
+            .Start("Scanning source for unused packages...", statusContext =>
+            {
+                result = analyzer.Analyze(
+                    solution,
+                    projectName => statusContext.Status($"Scanning source: {Markup.Escape(projectName)}"));
             });
 
         return result;

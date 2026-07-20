@@ -15,6 +15,7 @@ public static class ExitCodeResolver
         FailOn.Deprecated when report.Deprecated.Count > 0 => FailOnTriggered,
         FailOn.Outdated when report.Outdated.Count > 0 || report.OutdatedScanFailed => FailOnTriggered,
         FailOn.StrongCopyleft when report.StrongCopyleftCount > 0 => FailOnTriggered,
+        FailOn.Unused when report.UnusedCount > 0 => FailOnTriggered,
         FailOn.Any when report.Vulnerable.Count > 0
                         || report.Deprecated.Count > 0
                         || report.Outdated.Count > 0

@@ -8,7 +8,20 @@ public static class CsvExporter
     /// <summary>Writes the issues CSV and the licenses CSV. Returns both file paths.</summary>
     public static (string IssuesPath, string LicensesPath) Export(ScanReport report, string outputFile)
     {
-        var flat = report.Vulnerable.Concat(report.Deprecated).Concat(report.Outdated).ToList();
+        var unused = report.Unused.SelectMany(group => group.Items.Select(item =>
+        {
+            var row = new ReportItem
+            {
+                Category = "Unused",
+                Package = item.Package,
+                Version = item.Version,
+                Message = $"No code references {item.Namespaces}",
+            };
+            row.AddProjects([group.ProjectName]);
+            return row;
+        }));
+
+        var flat = report.Vulnerable.Concat(report.Deprecated).Concat(report.Outdated).Concat(unused).ToList();
 
         var sorted = flat
             .OrderBy(r => Rankings.CategoryOrder(r.Category))

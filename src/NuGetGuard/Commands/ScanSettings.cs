@@ -26,6 +26,10 @@ public sealed class ScanSettings : CommandSettings
     [Description("Skip the redundant-packages (transitive coverage) analysis.")]
     public bool SkipRedundant { get; init; }
 
+    [CommandOption("--skip-unused")]
+    [Description("Skip the unused-packages analysis (scans source files for package namespaces).")]
+    public bool SkipUnused { get; init; }
+
     [CommandOption("--no-open")]
     [Description("Do not open the HTML report in the browser after export.")]
     public bool NoOpen { get; init; }

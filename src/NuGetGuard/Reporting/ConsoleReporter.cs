@@ -13,6 +13,7 @@ public static class ConsoleReporter
         RenderOutdated(report);
         RenderLicenses(report);
         RenderRedundant(report);
+        RenderUnused(report);
         RenderSummary(report);
     }
 
@@ -152,6 +153,33 @@ public static class ConsoleReporter
         }
     }
 
+    private static void RenderUnused(ScanReport report)
+    {
+        AnsiConsole.MarkupLine("\n[aqua bold]━━━ 🧹 POSSIBLY UNUSED PACKAGES ━━━[/]");
+
+        if (report.Unused.Count == 0)
+        {
+            AnsiConsole.MarkupLine("  [green]✅ Every referenced package is used in source.[/]");
+            return;
+        }
+
+        foreach (var group in report.Unused)
+        {
+            var projectType = group.IsLegacy ? "legacy ⚠️" : "SDK";
+            AnsiConsole.MarkupLine($"  [white]📂 {Markup.Escape(group.ProjectName)}  ({projectType})[/]");
+
+            foreach (var item in group.Items)
+            {
+                AnsiConsole.MarkupLine(
+                    $"     [aqua]🧹 {Markup.Escape(item.Package)} {Markup.Escape(item.Version)}[/]  [grey50]no code references {Markup.Escape(item.Namespaces)}[/]");
+            }
+            AnsiConsole.WriteLine();
+        }
+
+        AnsiConsole.MarkupLine(
+            "  [yellow]⚠️  Heuristic — packages used only via configuration, DI or reflection also land here. Review before removing.[/]");
+    }
+
     private static void RenderSummary(ScanReport report)
     {
         AnsiConsole.MarkupLine("\n[cyan bold]━━━ 📊 SUMMARY ━━━[/]");
@@ -160,6 +188,8 @@ public static class ConsoleReporter
         AnsiConsole.MarkupLine(report.OutdatedScanFailed
             ? "  [yellow]Outdated        : ⚠️  scan failed (build errors)[/]"
             : $"  Outdated        : {(report.Outdated.Count > 0 ? $"📦 {report.Outdated.Count}" : "✅ 0")}");
+        AnsiConsole.MarkupLine(
+            $"  Possibly unused : {(report.UnusedCount > 0 ? $"🧹 {report.UnusedCount}" : "✅ 0")}");
         AnsiConsole.MarkupLine(
             $"  Licenses total  : {report.Licenses.Count}  (🔴 StrongCopyleft: {report.StrongCopyleftCount}  ⚪ Unknown: {report.UnknownLicenseCount})");
     }

@@ -12,6 +12,7 @@ public static class HtmlExporter
         var generatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
 
         var flat = report.Vulnerable.Concat(report.Deprecated).Concat(report.Outdated).ToList();
+        var unusedRows = BuildUnusedRows(report);
         var allResults = flat
             .OrderBy(r => Rankings.CategoryOrder(r.Category))
             .ThenBy(r => Rankings.MaxSeverityForPackage(flat, r.Category, r.Package))
@@ -126,6 +127,7 @@ public static class HtmlExporter
             <div class="card"><div class="num" style="color:#3498db">{{outdatedNum}}</div><div class="lbl">Outdated</div></div>
             <div class="card"><div class="num" style="color:#e74c3c">{{report.StrongCopyleftCount}}</div><div class="lbl">Strong Copyleft</div></div>
             <div class="card"><div class="num" style="color:#aaa">{{report.UnknownLicenseCount}}</div><div class="lbl">Unknown License</div></div>
+            <div class="card"><div class="num" style="color:#16a085">{{report.UnusedCount}}</div><div class="lbl">Possibly Unused</div></div>
             </div>
 
             {{outdatedNote}}
@@ -139,6 +141,8 @@ public static class HtmlExporter
             {{rows}}
             </tbody>
             </table>
+
+            {{unusedRows}}
 
             <h2>📜 License Audit</h2>
             <table>
@@ -156,6 +160,41 @@ public static class HtmlExporter
 
         File.WriteAllText(htmlPath, html, Encoding.UTF8);
         return htmlPath;
+    }
+
+    private static string BuildUnusedRows(ScanReport report)
+    {
+        if (report.Unused.Count == 0)
+            return "";
+
+        var rows = new StringBuilder();
+        foreach (var group in report.Unused)
+        {
+            foreach (var item in group.Items)
+            {
+                rows.AppendLine($"""
+                    <tr>
+                    <td class='projects'>{Encode(group.ProjectName)}</td>
+                    <td><strong>{Encode(item.Package)}</strong></td>
+                    <td><code>{Encode(item.Version)}</code></td>
+                    <td class='projects'>{Encode(item.Namespaces)}</td>
+                    </tr>
+                    """);
+            }
+        }
+
+        return $"""
+            <h2>🧹 Possibly Unused Packages</h2>
+            <div class='build-error'>⚠️ Heuristic — packages used only via configuration, dependency injection or reflection also appear here. Review before removing.</div>
+            <table>
+            <thead>
+            <tr><th>Project</th><th>Package</th><th>Version</th><th>Namespaces not referenced</th></tr>
+            </thead>
+            <tbody>
+            {rows}
+            </tbody>
+            </table>
+            """;
     }
 
     private static string Encode(string? value) => WebUtility.HtmlEncode(value ?? "");

@@ -96,6 +96,47 @@ public static class ProjectFileReader
         }
     }
 
+    /// <summary>
+    /// File paths explicitly listed in the project (Compile/Content/None items), resolved to absolute paths.
+    /// Legacy projects enumerate every file, and both formats use this for linked files living outside
+    /// the project folder.
+    /// </summary>
+    public static IEnumerable<string> GetIncludedFilePaths(string projectPath)
+    {
+        if (!File.Exists(projectPath))
+            yield break;
+
+        XDocument xml;
+        try { xml = XDocument.Load(projectPath); }
+        catch { yield break; }
+
+        var projectDir = Path.GetDirectoryName(Path.GetFullPath(projectPath))!;
+
+        foreach (var item in xml.Descendants())
+        {
+            if (item.Name.LocalName is not ("Compile" or "Content" or "None"))
+                continue;
+
+            var include = (string?)item.Attribute("Include");
+            if (string.IsNullOrEmpty(include) || include.Contains('*'))
+                continue;
+
+            string resolved;
+            try
+            {
+                resolved = Path.GetFullPath(
+                    Path.Combine(projectDir, include.Replace('\\', Path.DirectorySeparatorChar)));
+            }
+            catch (ArgumentException)
+            {
+                continue; // invalid path characters in the item
+            }
+
+            if (File.Exists(resolved))
+                yield return resolved;
+        }
+    }
+
     /// <summary>Recursively collects all ProjectReference paths reachable from a project (excluding itself).</summary>
     public static HashSet<string> GetProjectReferenceClosure(string projectPath)
     {

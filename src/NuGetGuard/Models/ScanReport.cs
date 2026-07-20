@@ -10,8 +10,10 @@ public sealed class ScanReport
     public bool OutdatedScanFailed { get; init; }
     public List<LicenseItem> Licenses { get; init; } = [];
     public List<RedundantProjectGroup> Redundant { get; init; } = [];
+    public List<UnusedProjectGroup> Unused { get; init; } = [];
     public List<string> SkippedProjects { get; init; } = [];
 
     public int StrongCopyleftCount => Licenses.Count(l => l.Risk == LicenseRisk.StrongCopyleft);
     public int UnknownLicenseCount => Licenses.Count(l => l.Risk == LicenseRisk.Unknown);
+    public int UnusedCount => Unused.Sum(g => g.Items.Count);
 }
