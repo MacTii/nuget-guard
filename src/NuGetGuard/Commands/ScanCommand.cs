@@ -25,7 +25,15 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
             return ExitCodeResolver.NoSolutionFound;
         }
 
-        AnsiConsole.MarkupLine($"\n[cyan]🔍 Scanning solution: {Markup.Escape(solution.SolutionFile.Name)}[/]\n");
+        AnsiConsole.MarkupLine($"\n[cyan]🔍 Scanning solution: {Markup.Escape(solution.SolutionFile.Name)}[/] [grey]({solution.ProjectFiles.Count} projects)[/]");
+
+        if (solution.OtherSolutions.Count > 0)
+        {
+            AnsiConsole.MarkupLine(
+                $"[yellow]⚠️  {solution.OtherSolutions.Count} more solution(s) found here and not scanned — point the path at one to scan it.[/]");
+        }
+
+        AnsiConsole.WriteLine();
 
         var allPackages = PackageCollector.CollectPackages(solution);
         await RestoreLegacyProjectsAsync(solution, allPackages);
