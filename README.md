@@ -55,6 +55,7 @@ dotnet nuget-guard --export html                            # run it
 ```
 
 Commit the manifest and teammates just run `dotnet tool restore`.
+
 </details>
 
 ---
