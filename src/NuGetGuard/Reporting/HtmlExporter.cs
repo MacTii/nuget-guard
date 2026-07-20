@@ -142,8 +142,6 @@ public static class HtmlExporter
             </tbody>
             </table>
 
-            {{unusedRows}}
-
             <h2>📜 License Audit</h2>
             <table>
             <thead>
@@ -153,6 +151,8 @@ public static class HtmlExporter
             {{licenseRows}}
             </tbody>
             </table>
+
+            {{unusedRows}}
 
             </body>
             </html>
