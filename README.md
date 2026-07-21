@@ -28,6 +28,8 @@
 
 Works with SDK-style projects, legacy `packages.config` (.NET Framework), Central Package Management and both `.sln` / `.slnx`.
 
+📚 **[Documentation](docs/)** — [how it works](docs/how-it-works.md) · [the checks in depth](docs/checks.md) · [troubleshooting](docs/troubleshooting.md)
+
 ---
 
 ## 📦 Install
@@ -221,6 +223,7 @@ nuget-guard/
 │   ├── Reporting/             # console / CSV / HTML output
 │   └── Models/                # report model
 ├── tests/NuGetGuard.Tests/    # unit tests — no network required
+├── docs/                      # how it works, checks in depth, troubleshooting
 ├── legacy/
 │   └── Scan-Packages.ps1      # original PowerShell version, no longer developed
 └── README.md
