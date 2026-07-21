@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using NuGetGuard.Models;
 
 namespace NuGetGuard.Services;
@@ -36,26 +35,4 @@ public static class PackageCollector
         package.Projects.Add(projectName);
     }
 
-    /// <summary>Adds packages restored to the legacy packages/ folder (transitive deps of packages.config projects).</summary>
-    public static void AddLegacyTransitivePackages(
-        IEnumerable<FileInfo> legacyProjects,
-        string packagesRoot,
-        Dictionary<string, CollectedPackage> bag)
-    {
-        var folderPattern = new Regex(@"^(?<id>.+?)\.(?<ver>\d+(\.\d+){1,3}(-[\w\.]+)?)$", RegexOptions.Compiled);
-        var resolved = Directory.EnumerateDirectories(packagesRoot)
-            .Select(Path.GetFileName)
-            .Where(name => name is not null)
-            .Select(name => folderPattern.Match(name!))
-            .Where(m => m.Success)
-            .Select(m => (Id: m.Groups["id"].Value, Version: m.Groups["ver"].Value))
-            .ToList();
-
-        foreach (var legacy in legacyProjects)
-        {
-            var projectName = Path.GetFileNameWithoutExtension(legacy.Name);
-            foreach (var (id, version) in resolved)
-                Add(bag, id, version, projectName);
-        }
-    }
 }

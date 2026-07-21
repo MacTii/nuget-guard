@@ -36,7 +36,7 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
         AnsiConsole.WriteLine();
 
         var allPackages = PackageCollector.CollectPackages(solution);
-        await RestoreLegacyProjectsAsync(solution, allPackages);
+        await RestoreLegacyProjectsAsync(solution);
 
         var http = SharedHttpClient.Instance;
         var nuget = new NuGetClient(http);
@@ -75,23 +75,22 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
         return ExitCodeResolver.Resolve(report, settings.FailOn);
     }
 
-    private static async Task RestoreLegacyProjectsAsync(
-        SolutionContext solution, Dictionary<string, CollectedPackage> allPackages)
+    private static async Task RestoreLegacyProjectsAsync(SolutionContext solution)
     {
         if (!LegacyRestorer.HasLegacyProjects(solution))
             return;
 
         AnsiConsole.MarkupLine("[cyan]🔄 Restoring legacy projects via nuget.exe...[/]");
-        var outcome = await new LegacyRestorer(SharedHttpClient.Instance).RestoreAsync(solution, allPackages);
+        var outcome = await new LegacyRestorer(SharedHttpClient.Instance).RestoreAsync(solution);
 
         var message = outcome switch
         {
             LegacyRestoreOutcome.Restored =>
-                "[green]✅ Added transitive packages from legacy restore[/]\n",
+                "[green]✅ Legacy packages restored[/]\n",
             LegacyRestoreOutcome.NuGetExeUnavailable =>
-                "[yellow]⚠️  Legacy projects detected but nuget.exe is unavailable — transitive deps will be missed.[/]\n",
+                "[yellow]⚠️  Legacy projects detected but nuget.exe is unavailable — redundancy and unused analysis will be limited.[/]\n",
             LegacyRestoreOutcome.NoPackagesFolder =>
-                "[yellow]⚠️  No packages/ folder produced by nuget restore[/]\n",
+                "[yellow]⚠️  No packages/ folder produced by nuget restore — redundancy and unused analysis will be limited.[/]\n",
             _ => null,
         };
         if (message is not null)

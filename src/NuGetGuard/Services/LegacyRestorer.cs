@@ -1,24 +1,23 @@
-using NuGetGuard.Models;
 using NuGetGuard.Services.DotNet;
 
 namespace NuGetGuard.Services;
 
 /// <summary>
-/// Restores legacy packages.config projects via nuget.exe and adds
-/// their transitive dependencies (from the packages/ folder) to the bag.
+/// Restores legacy packages.config projects via nuget.exe so that the packages/ folder
+/// is available for offline dependency and assembly lookups.
+///
+/// The restored folder is never used as a source of packages: packages.config already lists the
+/// full flattened closure, while the folder is solution-wide and keeps versions from earlier
+/// restores. Reading packages from it would report packages the projects no longer reference.
 /// </summary>
 public sealed class LegacyRestorer(HttpClient http)
 {
     public static bool HasLegacyProjects(SolutionContext solution) =>
         solution.ProjectFiles.Any(ProjectFileReader.IsLegacyProject);
 
-    public async Task<LegacyRestoreOutcome> RestoreAsync(
-        SolutionContext solution,
-        Dictionary<string, CollectedPackage> packages,
-        CancellationToken ct = default)
+    public async Task<LegacyRestoreOutcome> RestoreAsync(SolutionContext solution, CancellationToken ct = default)
     {
-        var legacyProjects = solution.ProjectFiles.Where(ProjectFileReader.IsLegacyProject).ToList();
-        if (legacyProjects.Count == 0)
+        if (!HasLegacyProjects(solution))
             return LegacyRestoreOutcome.NoLegacyProjects;
 
         var nugetExe = await NuGetExe.GetOrDownloadAsync(http, ct);
@@ -27,10 +26,8 @@ public sealed class LegacyRestorer(HttpClient http)
 
         await NuGetExe.RestoreAsync(nugetExe, solution.SolutionFile.FullName, ct);
 
-        if (solution.PackagesFolder is not { } packagesRoot)
-            return LegacyRestoreOutcome.NoPackagesFolder;
-
-        PackageCollector.AddLegacyTransitivePackages(legacyProjects, packagesRoot, packages);
-        return LegacyRestoreOutcome.Restored;
+        return solution.PackagesFolder is null
+            ? LegacyRestoreOutcome.NoPackagesFolder
+            : LegacyRestoreOutcome.Restored;
     }
 }
