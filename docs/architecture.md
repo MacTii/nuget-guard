@@ -1,25 +1,25 @@
-# Architecture
+﻿# Architecture
 
-How the code is organised and how each feature is implemented. For behaviour rather than implementation, see [how it works](how-it-works.md) and [the checks](checks.md).
+How the code is organised and how each feature is built — a tour for anyone reading the source. For what the tool does rather than how, see [how it works](how-it-works.md) and [the checks](checks.md).
 
 ## Layers
 
 One project, layered by folder. Dependencies point one way:
 
 ```
-Commands ──► Reporting ──► Services ──► Models
+Commands â”€â”€â–ş Reporting â”€â”€â–ş Services â”€â”€â–ş Models
    (CLI)      (output)      (logic)     (no dependencies)
 ```
 
 | Folder | Holds | Rule |
 |---|---|---|
 | `Commands/` | `ScanCommand`, `ScanSettings`, `FailOn`, `ExitCodeResolver` | Spectre.Console.Cli lives here and nowhere else |
-| `Services/` | scanning, NuGet API, licences, redundancy, unused | no console output — progress is reported through callbacks |
+| `Services/` | scanning, NuGet API, licences, redundancy, unused | no console output â€” progress is reported through callbacks |
 | `Services/DotNet/`, `Services/NuGetApi/` | external integrations + their JSON models | DTOs are `internal`, so API shapes never leak |
 | `Reporting/` | `ConsoleReporter`, `HtmlExporter`, `CsvExporter` | reads the report, never computes it |
 | `Models/` | the report model, one type per file | plain data + `Rankings` for ordering |
 
-Classes with state or dependencies are instances (`NuGetClient`, `ReportBuilder`, `RedundancyAnalyzer`, `UnusedPackageAnalyzer`); pure functions are static (`ProjectFileReader`, `LicenseCatalog`, `SolutionDiscovery`). There are no interfaces — nothing has a second implementation, and the pure functions are testable as they are.
+Classes with state or dependencies are instances (`NuGetClient`, `ReportBuilder`, `RedundancyAnalyzer`, `UnusedPackageAnalyzer`); pure functions are static (`ProjectFileReader`, `LicenseCatalog`, `SolutionDiscovery`). There are no interfaces â€” nothing has a second implementation, and the pure functions are testable as they are.
 
 ## The scan, in code
 
@@ -42,9 +42,9 @@ The progress bars and spinners live in `ScanCommand`; services take an `Action<s
 
 ## Reading projects
 
-`ProjectFileReader` is the single entry point for MSBuild files, deliberately XML-based rather than MSBuild-based — it must work without a restore, on legacy formats, and without evaluating the project.
+`ProjectFileReader` is the single entry point for MSBuild files, deliberately XML-based rather than MSBuild-based â€” it must work without a restore, on legacy formats, and without evaluating the project.
 
-It handles `PackageReference` as an attribute *and* as a child element, `packages.config`, Central Package Management (`Directory.Packages.props` supplies the version when the reference omits it), wildcard versions (skipped — they cannot be checked against an API), `<Using Include>` global usings, `ProjectReference` closure, and linked files declared outside the project folder.
+It handles `PackageReference` as an attribute *and* as a child element, `packages.config`, Central Package Management (`Directory.Packages.props` supplies the version when the reference omits it), wildcard versions (skipped â€” they cannot be checked against an API), `<Using Include>` global usings, `ProjectReference` closure, and linked files declared outside the project folder.
 
 Everything uses `e.Name.LocalName` rather than qualified names, because old project files carry the MSBuild namespace while SDK-style ones do not.
 
@@ -52,8 +52,8 @@ Everything uses `e.Name.LocalName` rather than qualified names, because old proj
 
 `NuGetClient` wraps two endpoints:
 
-- **registration** (`registration5-gz-semver2`) — deprecation, vulnerabilities, licence, dependencies;
-- **flat-container** — the version list, used for the latest stable version.
+- **registration** (`registration5-gz-semver2`) â€” deprecation, vulnerabilities, licence, dependencies;
+- **flat-container** â€” the version list, used for the latest stable version.
 
 Three things matter in the implementation:
 
@@ -61,7 +61,7 @@ Three things matter in the implementation:
 
 **Version matching.** `VersionsEqual` first compares strings, then falls back to parsed `NuGetVersion` comparison, so `1.0` and `1.0.0` match.
 
-**Caching.** `ConcurrentDictionary<string, Task<T>>` caches the *task*, not the result — concurrent callers asking for the same package await one request instead of racing. Three caches: index, dependencies, latest version.
+**Caching.** `ConcurrentDictionary<string, Task<T>>` caches the *task*, not the result â€” concurrent callers asking for the same package await one request instead of racing. Three caches: index, dependencies, latest version.
 
 Failures return `null` rather than throwing: a package missing from nuget.org (internal feed, unlisted) must not abort a scan.
 
@@ -70,19 +70,19 @@ Failures return `null` rather than throwing: a package missing from nuget.org (i
 Four steps, first hit wins, implemented across `NuGetClient.ApplyLicense`, `LicenseCatalog` and `LicenseUrlResolver`:
 
 1. `licenseExpression` from the API.
-2. `LicenseCatalog.GetKnownLicense` — ~460 exact ids plus an *ordered* prefix table. Order matters: `microsoft.aspnetcore.` (MIT) is checked before `microsoft.aspnet.` (Apache-2.0), otherwise the shorter prefix would win.
-3. `LicenseUrlResolver.ResolveFromUrlPattern` — URL shape, no request.
-4. `LicenseUrlResolver.ResolveFromContentAsync` — downloads the page and matches SPDX fingerprints, ordered most specific first (AGPL before GPL, `Apache License, Version 2.0` before a bare "Apache").
+2. `LicenseCatalog.GetKnownLicense` â€” ~460 exact ids plus an *ordered* prefix table. Order matters: `microsoft.aspnetcore.` (MIT) is checked before `microsoft.aspnet.` (Apache-2.0), otherwise the shorter prefix would win.
+3. `LicenseUrlResolver.ResolveFromUrlPattern` â€” URL shape, no request.
+4. `LicenseUrlResolver.ResolveFromContentAsync` â€” downloads the page and matches SPDX fingerprints, ordered most specific first (AGPL before GPL, `Apache License, Version 2.0` before a bare "Apache").
 
-`LicenseCatalog.GetRisk` then classifies the SPDX id, with a fuzzy fallback for compound expressions like `MIT OR Apache-2.0`. The GPL check excludes LGPL explicitly — substring matching would otherwise call every LGPL package strong copyleft.
+`LicenseCatalog.GetRisk` then classifies the SPDX id, with a fuzzy fallback for compound expressions like `MIT OR Apache-2.0`. The GPL check excludes LGPL explicitly â€” substring matching would otherwise call every LGPL package strong copyleft.
 
 ## Redundancy
 
 `RedundancyAnalyzer` answers "is this reference already provided by another one?".
 
-For each project it builds the transitive closure of every direct reference, then reports any direct reference contained in another's closure. `WalkClosureAsync` recurses through dependency ids, guarded by a `HashSet` that doubles as the cycle guard — `visited.Add` returning false ends that branch.
+For each project it builds the transitive closure of every direct reference, then reports any direct reference contained in another's closure. `WalkClosureAsync` recurses through dependency ids, guarded by a `HashSet` that doubles as the cycle guard â€” `visited.Add` returning false ends that branch.
 
-Dependencies come from the local `.nuspec` first (`NuspecDependencyReader`, no network) and from the registration API otherwise. For SDK projects it additionally reports packages already referenced by a referenced project. Framework polyfills (`FrameworkPolyfills`) are never reported — they exist precisely to satisfy other packages.
+Dependencies come from the local `.nuspec` first (`NuspecDependencyReader`, no network) and from the registration API otherwise. For SDK projects it additionally reports packages already referenced by a referenced project. Framework polyfills (`FrameworkPolyfills`) are never reported â€” they exist precisely to satisfy other packages.
 
 ## Unused packages
 
@@ -91,74 +91,24 @@ Dependencies come from the local `.nuspec` first (`NuspecDependencyReader`, no n
 | Helper | Role |
 |---|---|
 | `PackageAssemblyLocator` | finds the package's `lib/` or `ref/` assemblies, in `~/.nuget/packages` or the legacy folder |
-| `AssemblyNamespaceReader` | reads exported namespaces via `System.Reflection.Metadata` — `PEReader` + `MetadataReader`, never `Assembly.Load` |
+| `AssemblyNamespaceReader` | reads exported namespaces via `System.Reflection.Metadata` â€” `PEReader` + `MetadataReader`, never `Assembly.Load` |
 | `SourceNamespaceScanner` | collects namespace-shaped tokens from source files |
 
 The scanner is text-based, matching both `using X.Y;` (including `global`, `static`, aliases, Razor `@using`, VB `Imports`) and any dotted identifier, so fully qualified calls count. Each token is added with all its prefixes: `A.B.C` also registers `A.B` and `A`.
 
-Comments and strings are *not* stripped, and that is intentional — the failure mode of this check is asymmetric. Calling a used package unused sends someone to break a build; missing one costs nothing. Every exclusion follows the same reasoning: tooling packages, packages without assemblies, polyfills, `packages.config` transitive entries, and projects whose legacy `packages/` folder was never restored.
+Comments and strings are *not* stripped, and that is intentional â€” the failure mode of this check is asymmetric. Calling a used package unused sends someone to break a build; missing one costs nothing. Every exclusion follows the same reasoning: tooling packages, packages without assemblies, polyfills, `packages.config` transitive entries, and projects whose legacy `packages/` folder was never restored.
 
 ## Reporting
 
 `ScanReport` is the single input to all three renderers, so the console, HTML and CSV cannot drift apart. `Rankings` centralises ordering (severity, category) and is shared by the exporters.
 
-`CsvExporter` flattens the grouped sections (`Redundant`, `Unused`) into `ReportItem` rows so one CSV holds every category. `HtmlExporter` builds a self-contained page — inline CSS, `rowspan` grouping per package — and `ReportExporter` picks the format and opens the browser.
+`CsvExporter` flattens the grouped sections (`Redundant`, `Unused`) into `ReportItem` rows so one CSV holds every category. `HtmlExporter` builds a self-contained page â€” inline CSS, `rowspan` grouping per package â€” and `ReportExporter` picks the format and opens the browser.
 
 ## Testing
 
-`tests/NuGetGuard.Tests` — xUnit v3 with Shouldly, no network and no build required. Tests write real temporary files (`Directory.CreateTempSubdirectory`) rather than mocking the file system, because the code under test parses real project formats and that is what needs verifying.
+`tests/NuGetGuard.Tests` â€” xUnit v3 with Shouldly, no network and no build required. Tests write real temporary files (`Directory.CreateTempSubdirectory`) rather than mocking the file system, because the code under test parses real project formats and that is what needs verifying.
 
 `UnusedPackageAnalyzerTests` copies the tool's own assembly into a fake package folder, giving a package with known namespaces without shipping a fixture binary.
 
-Integrations (`NuGetClient`, `DotNetCli`) have no unit tests — mocking them would only prove the mock works. They are covered by running the tool against real solutions.
+Integrations (`NuGetClient`, `DotNetCli`) have no unit tests â€” mocking them would only prove the mock works. They are covered by running the tool against real solutions.
 
-## Extending
-
-### A new check
-
-Say you want to flag prerelease versions in production projects. A check has to appear in the model, the logic, all three renderers and the CI gate:
-
-| File | What to add |
-|---|---|
-| `Services/ReportBuilder.cs` | `BuildPrerelease(metadata)` — the logic itself |
-| `Models/ScanReport.cs` | `public List<ReportItem> Prerelease { get; init; } = [];` |
-| `Models/Rankings.cs` | its place in `CategoryOrder`, which drives CSV and HTML ordering |
-| `Reporting/ConsoleReporter.cs` | a `RenderPrerelease` section plus a summary line |
-| `Reporting/HtmlExporter.cs` | a summary tile and a table |
-| `Reporting/CsvExporter.cs` | rows carrying `Category = "Prerelease"` |
-| `Commands/FailOn.cs` | the enum value |
-| `Commands/ExitCodeResolver.cs` | a `case` in `Resolve` |
-| `Commands/ScanCommand.cs` | wire it into the pipeline |
-| `tests/` | tests for the new logic |
-
-A check that needs its own state or caching gets a class in `Services/` instead of a `ReportBuilder` method — that is why `RedundancyAnalyzer` and `UnusedPackageAnalyzer` are separate.
-
-Heuristic checks stay out of `FailOn.Any`: a guess should never break someone's build unless they asked for it.
-
-That is a lot of mechanical edits, and the cost is deliberate. A shared `ICheck` abstraction with a loop would shrink it, but at six checks the indirection would cost more than it saves.
-
-### A new export format
-
-Three files, because `ScanReport` is the single input to every renderer:
-
-| File | What to add |
-|---|---|
-| `Reporting/ExportFormat.cs` | the enum value |
-| `Reporting/JsonExporter.cs` | the exporter — one `Export(report, outputFile)` method |
-| `Reporting/ReportExporter.cs` | a branch in the `switch` |
-
-The CLI needs no change: Spectre parses the enum, so `--export json` starts working on its own. SARIF is the most useful candidate — GitHub reads it into the Security tab and annotates pull requests.
-
-### A licence mapping
-
-Useful when a report shows `Unknown` for packages from a private feed.
-
-```csharp
-// One package, in KnownPackageLicenses:
-["yourcompany.internal.common"] = "Proprietary",
-
-// A whole family, in PrefixMap:
-("yourcompany.", "Proprietary"),
-```
-
-`PrefixMap` is scanned in order and the first match wins, so a more specific prefix must come first. `microsoft.aspnetcore.` (MIT) sits above `microsoft.aspnet.` (Apache-2.0) for exactly that reason — reversed, the shorter prefix would swallow it and label ASP.NET Core as Apache.
