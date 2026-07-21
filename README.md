@@ -47,6 +47,8 @@ dotnet tool install -g NuGetGuard --add-source ./artifacts
 
 Uninstall with `dotnet tool uninstall -g NuGetGuard`.
 
+> Rebuilding later? Empty `artifacts/` first — `dotnet pack` never cleans it, and install takes the highest version it finds there. See [troubleshooting](docs/troubleshooting.md#the-installed-version-is-not-the-one-just-built).
+
 <details>
 <summary>Per-repository install instead of global</summary>
 

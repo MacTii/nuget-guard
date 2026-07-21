@@ -1,5 +1,29 @@
 # Troubleshooting
 
+## The installed version is not the one just built
+
+`dotnet pack` adds to its output folder without cleaning it, and `dotnet tool install` picks the **highest** version it finds there. An earlier build therefore keeps winning:
+
+```
+artifacts/
+  NuGetGuard.1.1.0.nupkg   <- built earlier, still installed
+  NuGetGuard.1.0.0.nupkg   <- just built, ignored
+```
+
+`artifacts/` is git-ignored, so pulling never clears it. Rebuild from a clean folder:
+
+```powershell
+git pull
+Remove-Item artifacts\*.nupkg -Force
+dotnet pack src\NuGetGuard\NuGetGuard.csproj -c Release -o artifacts
+dotnet tool uninstall -g NuGetGuard
+dotnet tool install -g NuGetGuard --add-source .\artifacts
+```
+
+Or name the version outright: `dotnet tool install -g NuGetGuard --add-source .\artifacts --version 1.0.0`.
+
+Check what is actually installed with `dotnet tool list -g`.
+
 ## A version I no longer reference is reported
 
 Check what the project file actually declares:
