@@ -114,8 +114,51 @@ Integrations (`NuGetClient`, `DotNetCli`) have no unit tests — mocking them wo
 
 ## Extending
 
-**A new check.** Add the model to `Models/`, a `Build*` method to `ReportBuilder` (or a dedicated analyzer if it needs its own state), a property on `ScanReport`, rendering in all three reporters, and a `FailOn` value if it should be able to break a build. Heuristic checks stay out of `FailOn.Any`.
+### A new check
 
-**A new export format.** Add the value to `ExportFormat`, the exporter to `Reporting/`, and a branch in `ReportExporter.Export`.
+Say you want to flag prerelease versions in production projects. A check has to appear in the model, the logic, all three renderers and the CI gate:
 
-**A licence mapping.** Add the id to `LicenseCatalog.KnownPackageLicenses`, or a prefix to `PrefixMap` — before any shorter prefix that would also match.
+| File | What to add |
+|---|---|
+| `Services/ReportBuilder.cs` | `BuildPrerelease(metadata)` — the logic itself |
+| `Models/ScanReport.cs` | `public List<ReportItem> Prerelease { get; init; } = [];` |
+| `Models/Rankings.cs` | its place in `CategoryOrder`, which drives CSV and HTML ordering |
+| `Reporting/ConsoleReporter.cs` | a `RenderPrerelease` section plus a summary line |
+| `Reporting/HtmlExporter.cs` | a summary tile and a table |
+| `Reporting/CsvExporter.cs` | rows carrying `Category = "Prerelease"` |
+| `Commands/FailOn.cs` | the enum value |
+| `Commands/ExitCodeResolver.cs` | a `case` in `Resolve` |
+| `Commands/ScanCommand.cs` | wire it into the pipeline |
+| `tests/` | tests for the new logic |
+
+A check that needs its own state or caching gets a class in `Services/` instead of a `ReportBuilder` method — that is why `RedundancyAnalyzer` and `UnusedPackageAnalyzer` are separate.
+
+Heuristic checks stay out of `FailOn.Any`: a guess should never break someone's build unless they asked for it.
+
+That is a lot of mechanical edits, and the cost is deliberate. A shared `ICheck` abstraction with a loop would shrink it, but at six checks the indirection would cost more than it saves.
+
+### A new export format
+
+Three files, because `ScanReport` is the single input to every renderer:
+
+| File | What to add |
+|---|---|
+| `Reporting/ExportFormat.cs` | the enum value |
+| `Reporting/JsonExporter.cs` | the exporter — one `Export(report, outputFile)` method |
+| `Reporting/ReportExporter.cs` | a branch in the `switch` |
+
+The CLI needs no change: Spectre parses the enum, so `--export json` starts working on its own. SARIF is the most useful candidate — GitHub reads it into the Security tab and annotates pull requests.
+
+### A licence mapping
+
+Useful when a report shows `Unknown` for packages from a private feed.
+
+```csharp
+// One package, in KnownPackageLicenses:
+["yourcompany.internal.common"] = "Proprietary",
+
+// A whole family, in PrefixMap:
+("yourcompany.", "Proprietary"),
+```
+
+`PrefixMap` is scanned in order and the first match wins, so a more specific prefix must come first. `microsoft.aspnetcore.` (MIT) sits above `microsoft.aspnet.` (Apache-2.0) for exactly that reason — reversed, the shorter prefix would swallow it and label ASP.NET Core as Apache.
