@@ -28,7 +28,7 @@
 
 Works with SDK-style projects, legacy `packages.config` (.NET Framework), Central Package Management and both `.sln` / `.slnx`.
 
-📚 **[Documentation](docs/)** — [how it works](docs/how-it-works.md) · [the checks in depth](docs/checks.md) · [troubleshooting](docs/troubleshooting.md)
+📚 **[Documentation](docs/)** — [how it works](docs/how-it-works.md) · [the checks in depth](docs/checks.md) · [troubleshooting](docs/troubleshooting.md) · [architecture](docs/architecture.md)
 
 ---
 
