@@ -40,14 +40,17 @@ Only for `packages.config` projects. The restored `packages/` folder is used for
 N is the number of distinct package + version pairs across the solution. The same package at two versions counts twice.
 
 **`Resolving N unidentified licenses...`** / **`Resolved M additional licenses from page content`**
-Licences are resolved in four steps, stopping at the first that succeeds:
+Licences are resolved in five steps, stopping at the first that succeeds. Everything offline comes first, so the network is only used for what is left:
 
 1. `licenseExpression` from the NuGet API — a plain SPDX id such as `MIT`.
-2. A built-in database of about 460 well-known packages, for older ones that predate SPDX expressions.
+2. A built-in database of well-known packages, for older ones that predate SPDX expressions.
 3. The shape of `licenseUrl` — `opensource.org/licenses/MIT` and similar URLs identify the licence on their own, without a request.
-4. **Downloading the licence page and matching its text** — the step the two messages report. Packages that only link to a licence page get one HTTP request each, and the page is matched against SPDX fingerprints, most specific first: the AGPL preamble before the GPL one, `Apache License, Version 2.0` before a bare mention of Apache, and so on.
+4. **The licence file shipped inside the package.** Modern packages embed a licence file instead of linking to one, and the nuget.org page for those renders its text through scripting, so downloading it yields nothing. The restored package holds the file itself, so it is read from disk and matched against SPDX fingerprints.
+5. **Downloading the licence page and matching its text** — one HTTP request per package that still has an unidentified URL.
 
-So `Resolved 15 additional licenses from page content` means 15 packages were classified by reading their licence pages, and the remainder stayed `Unknown`. Those are usually commercial EULAs behind redirects and packages with no licence metadata at all — worth a manual look, because an unknown licence is a compliance gap rather than a safe default.
+Both matching steps use the same fingerprints, ordered most specific first: the AGPL preamble before the GPL one, `Apache License, Version 2.0` before a bare mention of Apache.
+
+`Identified 15 more, 13 left unknown` therefore means 15 packages were classified by these steps and 13 could not be. What remains is normally genuine: commercial EULAs and packages that publish no licence metadata at all. Treat those as a compliance gap to check by hand, not as a safe default — `Unknown` means nothing was verified.
 
 **`Solution-level vulnerable scan failed, falling back to per-project...`**
 `dotnet list package` needs a restored project. When the solution as a whole cannot be analysed — typically a mix of legacy and SDK projects — each project is tried separately, and the ones that fail are listed as skipped. Vulnerability data from the registration API still covers every package, so the scan stays useful.

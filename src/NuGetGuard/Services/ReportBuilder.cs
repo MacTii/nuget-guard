@@ -35,26 +35,39 @@ public sealed class ReportBuilder(NuGetClient nuget)
         return results;
     }
 
-    /// <summary>Second pass: resolve remaining "See URL"/"Unknown" licenses by fetching the license page content.</summary>
+    /// <summary>
+    /// Second pass for licences the API did not identify. Everything offline is tried first —
+    /// the known-package database, then the licence file the package ships — so the network is
+    /// only used for what is left.
+    /// </summary>
     public static async Task<int> ResolveRemainingLicensesAsync(
-        List<PackageMetadata> metadata, LicenseUrlResolver resolver, CancellationToken ct = default)
+        List<PackageMetadata> metadata,
+        LicenseUrlResolver resolver,
+        string? legacyPackagesFolder = null,
+        CancellationToken ct = default)
     {
         var unresolved = metadata.Where(m => m.License is "See URL" or "Unknown").ToList();
         if (unresolved.Count == 0)
             return 0;
 
-        // Known-package DB first (fast, no HTTP)
+        var resolvedOffline = 0;
         foreach (var meta in unresolved)
         {
-            if (LicenseCatalog.GetKnownLicense(meta.Id) is { } known)
+            var known = LicenseCatalog.GetKnownLicense(meta.Id)
+                ?? PackageLicenseFileReader.Read(meta.Id, meta.Version, legacyPackagesFolder);
+
+            if (known is not null)
+            {
                 meta.License = known;
+                resolvedOffline++;
+            }
         }
 
         var toFetch = unresolved
             .Where(m => m.License is "See URL" or "Unknown" && !string.IsNullOrEmpty(m.LicenseUrl))
             .ToList();
         if (toFetch.Count == 0)
-            return 0;
+            return resolvedOffline;
 
         await Parallel.ForEachAsync(
             toFetch,
@@ -66,7 +79,7 @@ public sealed class ReportBuilder(NuGetClient nuget)
                     meta.License = resolved;
             });
 
-        return toFetch.Count(m => m.License is not ("See URL" or "Unknown"));
+        return resolvedOffline + toFetch.Count(m => m.License is not ("See URL" or "Unknown"));
     }
 
     /// <summary>Vulnerable packages: solution-level dotnet scan with per-project fallback, merged with registration API data.</summary>

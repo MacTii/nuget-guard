@@ -1,5 +1,3 @@
-using System.Text.RegularExpressions;
-
 namespace NuGetGuard.Services;
 
 /// <summary>Resolves an SPDX license identifier from a licenseUrl — by URL pattern first, then by fetching page content.</summary>
@@ -41,30 +39,6 @@ public sealed class LicenseUrlResolver(HttpClient http)
     ];
 
     // Ordered from most specific to least specific
-    private static readonly (string Spdx, string Pattern)[] ContentPatterns =
-    [
-        ("AGPL-3.0", @"GNU AFFERO GENERAL PUBLIC LICENSE.*Version 3|AGPL.?3\.0"),
-        ("GPL-3.0", @"GNU GENERAL PUBLIC LICENSE.*Version 3(?!.*Affero)|GPL.?3\.0"),
-        ("GPL-2.0", @"GNU GENERAL PUBLIC LICENSE.*Version 2(?!.*Affero)|GPL.?2\.0"),
-        ("LGPL-3.0", @"GNU LESSER GENERAL PUBLIC LICENSE.*Version 3|LGPL.?3\.0"),
-        ("LGPL-2.1", @"GNU LESSER GENERAL PUBLIC LICENSE.*Version 2\.1|LGPL.?2\.1"),
-        ("LGPL-2.0", @"GNU LESSER GENERAL PUBLIC LICENSE.*Version 2(?!\.1)|LGPL.?2\.0"),
-        ("MPL-2.0", @"Mozilla Public License.*2\.0|MPL.?2\.0"),
-        ("EPL-2.0", @"Eclipse Public License.*2\.0|EPL.?2\.0"),
-        ("EPL-1.0", @"Eclipse Public License.*1\.0|EPL.?1\.0"),
-        ("EUPL-1.2", @"European Union Public Licence.*1\.2|EUPL.?1\.2"),
-        ("EUPL-1.1", @"European Union Public Licence.*1\.1|EUPL.?1\.1"),
-        ("Apache-2.0", @"Apache License.*Version 2\.0|Apache.?2\.0"),
-        ("BSD-3-Clause", @"BSD 3-Clause|Redistribution and use.*three.*conditions"),
-        ("BSD-2-Clause", @"BSD 2-Clause|Redistribution and use.*two.*conditions"),
-        ("MIT", @"Permission is hereby granted.*free of charge|MIT License"),
-        ("ISC", @"ISC License|Permission to use.*copy.*modify"),
-        ("MS-PL", @"Microsoft Public License|Ms-PL"),
-        ("Unlicense", @"This is free and unencumbered software released into the public domain"),
-        ("CC0-1.0", @"CC0 1\.0 Universal|Creative Commons.*Public Domain"),
-        ("BSL-1.0", @"Boost Software License"),
-    ];
-
     /// <summary>Fast resolution from URL pattern alone — no HTTP.</summary>
     public static string? ResolveFromUrlPattern(string? url)
     {
@@ -90,14 +64,7 @@ public sealed class LicenseUrlResolver(HttpClient http)
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
             cts.CancelAfter(TimeSpan.FromSeconds(6));
             var content = await http.GetStringAsync(url, cts.Token);
-
-            foreach (var (spdx, pattern) in ContentPatterns)
-            {
-                if (Regex.IsMatch(content, pattern,
-                        RegexOptions.IgnoreCase | RegexOptions.Singleline,
-                        TimeSpan.FromSeconds(2)))
-                    return spdx;
-            }
+            return SpdxTextMatcher.Identify(content);
         }
         catch
         {

@@ -5,8 +5,8 @@
 Check what the project file actually declares:
 
 ```powershell
-Select-String -Path .\**\packages.config -Pattern "Magick"
-Select-String -Path .\**\*.csproj -Pattern "Magick"
+Select-String -Path .\**\packages.config -Pattern "PackageName"
+Select-String -Path .\**\*.csproj -Pattern "PackageName"
 ```
 
 The tool reports what the **project files** declare, so a version that appears there but not in Visual Studio usually means one project was left behind during an upgrade — the Visual Studio package manager shows a consolidated view, while the report lists every project separately. Consolidating the version across the solution removes the finding.
@@ -24,7 +24,7 @@ The project list comes from the solution file. Projects on disk but not in the s
 Point the path at the solution you want:
 
 ```bash
-nuget-guard C:\src\Core\SomeOther.sln.folder
+nuget-guard C:\Projects\MyApp\SomeOtherSolutionFolder
 ```
 
 ## `Solution-level vulnerable scan failed, falling back to per-project`
@@ -42,9 +42,9 @@ The licence could not be verified from metadata, a known-package database, the U
 `--output` resolves against the current directory, not the scanned path:
 
 ```bash
-cd C:\src\Core
-nuget-guard . --export html                                  # → C:\src\Core\nuget-report.html
-nuget-guard C:\src\Core --export html --output C:\reports\core   # → C:\reports\core.html
+cd C:\Projects\MyApp
+nuget-guard . --export html                                        # -> C:\Projects\MyApp\nuget-report.html
+nuget-guard C:\Projects\MyApp --export html --output C:\reports\app   # -> C:\reports\app.html
 ```
 
 ## The scan is slow

@@ -43,7 +43,7 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
         var builder = new ReportBuilder(nuget);
 
         var metadata = await FetchMetadataWithProgressAsync(builder, allPackages.Values.ToList());
-        await ResolveLicensesWithProgressAsync(metadata, http);
+        await ResolveLicensesWithProgressAsync(metadata, http, solution.PackagesFolder);
 
         var (vulnerable, skippedProjects) = await ReportBuilder.BuildVulnerableAsync(
             solution, metadata,
@@ -114,15 +114,18 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
         return metadata;
     }
 
-    private static async Task ResolveLicensesWithProgressAsync(List<PackageMetadata> metadata, HttpClient http)
+    private static async Task ResolveLicensesWithProgressAsync(
+        List<PackageMetadata> metadata, HttpClient http, string? legacyPackagesFolder)
     {
         var unresolvedCount = metadata.Count(m => m.License is "See URL" or "Unknown");
         if (unresolvedCount == 0)
             return;
 
         AnsiConsole.MarkupLine($"[cyan]🔄 Resolving {unresolvedCount} unidentified licenses...[/]");
-        var resolved = await ReportBuilder.ResolveRemainingLicensesAsync(metadata, new LicenseUrlResolver(http));
-        AnsiConsole.MarkupLine($"[green]✅ Resolved {resolved} additional licenses from page content[/]\n");
+        var resolved = await ReportBuilder.ResolveRemainingLicensesAsync(
+            metadata, new LicenseUrlResolver(http), legacyPackagesFolder);
+        AnsiConsole.MarkupLine(
+            $"[green]✅ Identified {resolved} more, {unresolvedCount - resolved} left unknown[/]\n");
     }
 
     private static async Task<List<RedundantProjectGroup>> AnalyzeRedundantWithProgressAsync(

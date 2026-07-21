@@ -12,7 +12,7 @@ public static class PackageAssemblyLocator
     /// </summary>
     public static IReadOnlyList<string> FindAssemblies(string id, string version, string? legacyPackagesFolder)
     {
-        foreach (var root in CandidateRoots(id, version, legacyPackagesFolder))
+        foreach (var root in PackageFolderLocator.CandidateRoots(id, version, legacyPackagesFolder))
         {
             if (!Directory.Exists(root))
                 continue;
@@ -31,16 +31,4 @@ public static class PackageAssemblyLocator
 
         return [];
     }
-
-    private static IEnumerable<string> CandidateRoots(string id, string version, string? legacyPackagesFolder)
-    {
-        yield return Path.Combine(GlobalPackagesFolder(), id.ToLowerInvariant(), version.ToLowerInvariant());
-
-        if (legacyPackagesFolder is not null)
-            yield return Path.Combine(legacyPackagesFolder, $"{id}.{version}");
-    }
-
-    private static string GlobalPackagesFolder() =>
-        Environment.GetEnvironmentVariable("NUGET_PACKAGES")
-        ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nuget", "packages");
 }
