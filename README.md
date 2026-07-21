@@ -22,7 +22,7 @@
 | 🚨 **Vulnerable** | Known CVEs, grouped by severity, with advisory links |
 | ⚠️ **Deprecated** | Deprecated packages and their recommended replacement |
 | 📦 **Outdated** | Latest available version for everything behind |
-| 📜 **Licenses** | SPDX license per package, classified 🟢 permissive / 🟡 weak / 🔴 strong copyleft |
+| 📜 **Licenses** | License per package, classified 🟢 permissive / 🟡 weak / 🔴 strong copyleft / ⚪ unknown |
 | 🔗 **Redundant** | References another package already pulls in — the project-file line is superfluous |
 | 🧹 **Unused** | Packages whose namespaces appear nowhere in your source |
 
@@ -120,7 +120,7 @@ Opposite packages: Newtonsoft *is* used but needn't be listed; WebApi.Client *is
 ## 📊 Sample output
 
 ```
-🔍 Scanning solution: MyApp.sln
+🔍 Scanning solution: MyApp.sln (4 projects)
 
 ━━━ 🚨 VULNERABLE PACKAGES ━━━
   📦 Newtonsoft.Json 12.0.1
@@ -141,7 +141,9 @@ Opposite packages: Newtonsoft *is* used but needn't be listed; WebApi.Client *is
 
 ━━━ 📜 LICENSE AUDIT ━━━
   🔴 StrongCopyleft (1)
-     📦 iText7 8.0.1  [AGPL-3.0]
+     📦 iText7 8.0.1  [AGPL-3.0]  → https://www.nuget.org/packages/iText7/8.0.1/license
+  ⚪ Unknown (1)
+     📦 WebGrease 1.6.0  [MS-EULA]  → http://www.microsoft.com/web/webpi/eula/aspnetcomponent_rtw_ENU.htm
 
 ━━━ 🔗 REDUNDANT PACKAGES (covered transitively) ━━━
   📂 MyApp.Api  (SDK)

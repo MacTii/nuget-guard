@@ -25,12 +25,15 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
             return ExitCodeResolver.NoSolutionFound;
         }
 
-        AnsiConsole.MarkupLine($"\n[cyan]🔍 Scanning solution: {Markup.Escape(solution.SolutionFile.Name)}[/] [grey]({solution.ProjectFiles.Count} projects)[/]");
+        var projectCount = solution.ProjectFiles.Count;
+        AnsiConsole.MarkupLine(
+            $"\n[cyan]🔍 Scanning solution: {Markup.Escape(solution.SolutionFile.Name)}[/] [grey]({projectCount} {(projectCount == 1 ? "project" : "projects")})[/]");
 
-        if (solution.OtherSolutions.Count > 0)
+        var others = solution.OtherSolutions.Count;
+        if (others > 0)
         {
             AnsiConsole.MarkupLine(
-                $"[yellow]⚠️  {solution.OtherSolutions.Count} more solution(s) found here and not scanned — point the path at one to scan it.[/]");
+                $"[yellow]⚠️  {others} more {(others == 1 ? "solution" : "solutions")} found here and not scanned — point the path at one to scan it.[/]");
         }
 
         AnsiConsole.WriteLine();
