@@ -51,6 +51,8 @@ public static class LicenseCatalog
         ["microsoft.bcl.asyncinterfaces"] = "MIT",
         ["microsoft.csharp"] = "MIT",
         ["microsoft.codedom.providers.dotnetcompilerplatform"] = "MIT",
+        // Ships the Microsoft .NET Library terms as its licence file, not an open-source licence
+        ["microsoft.web.infrastructure"] = "MS-EULA",
         ["microsoft.extensions.caching.abstractions"] = "MIT",
         ["microsoft.extensions.caching.memory"] = "MIT",
         ["microsoft.extensions.configuration"] = "MIT",
@@ -493,6 +495,7 @@ public static class LicenseCatalog
         ("microsoft.identity.", "MIT"),
         ("microsoft.identitymodel.", "MIT"),
         ("microsoft.net.", "MIT"),
+        ("microsoft.netcore.", "MIT"),
         ("microsoft.visualstudio.", "MIT"),
         ("microsoft.codeanalysis.", "MIT"),
         ("microsoft.build.", "MIT"),
