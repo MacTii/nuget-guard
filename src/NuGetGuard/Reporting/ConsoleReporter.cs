@@ -100,7 +100,11 @@ public static class ConsoleReporter
     {
         AnsiConsole.MarkupLine("\n[fuchsia bold]━━━ 📜 LICENSE AUDIT ━━━[/]");
 
-        foreach (var risk in new[] { LicenseRisk.StrongCopyleft, LicenseRisk.WeakCopyleft, LicenseRisk.Unknown, LicenseRisk.Permissive })
+        foreach (var risk in new[]
+                 {
+                     LicenseRisk.StrongCopyleft, LicenseRisk.WeakCopyleft,
+                     LicenseRisk.Proprietary, LicenseRisk.Unknown, LicenseRisk.Permissive,
+                 })
         {
             var group = report.Licenses.Where(l => l.Risk == risk).OrderBy(l => l.Package, StringComparer.OrdinalIgnoreCase).ToList();
             if (group.Count == 0)
@@ -110,6 +114,7 @@ public static class ConsoleReporter
             {
                 LicenseRisk.StrongCopyleft => ("🔴", "red"),
                 LicenseRisk.WeakCopyleft => ("🟡", "yellow"),
+                LicenseRisk.Proprietary => ("🔒", "darkorange"),
                 LicenseRisk.Permissive => ("🟢", "green"),
                 _ => ("⚪", "grey"),
             };
@@ -193,6 +198,6 @@ public static class ConsoleReporter
         AnsiConsole.MarkupLine(
             $"  Possibly unused : {(report.UnusedCount > 0 ? $"🧹 {report.UnusedCount}" : "✅ 0")}");
         AnsiConsole.MarkupLine(
-            $"  Licenses total  : {report.Licenses.Count}  (🔴 StrongCopyleft: {report.StrongCopyleftCount}  ⚪ Unknown: {report.UnknownLicenseCount})");
+            $"  Licenses total  : {report.Licenses.Count}  (🔴 StrongCopyleft: {report.StrongCopyleftCount}  🔒 Proprietary: {report.ProprietaryLicenseCount}  ⚪ Unknown: {report.UnknownLicenseCount})");
     }
 }

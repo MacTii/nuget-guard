@@ -51,13 +51,14 @@ public class ReportBuilderTests
             NewMetadata("Permissive.Pkg", m => m.License = "MIT"),
             NewMetadata("Copyleft.Pkg", m => m.License = "AGPL-3.0"),
             NewMetadata("Mystery.Pkg", m => m.License = "Unknown"),
+            NewMetadata("Paid.Pkg", m => m.License = "Commercial"),
         };
 
         var licenses = ReportBuilder.BuildLicenses(metadata);
 
-        licenses.Select(l => l.Package).ShouldBe(["Copyleft.Pkg", "Mystery.Pkg", "Permissive.Pkg"]);
+        licenses.Select(l => l.Package).ShouldBe(["Copyleft.Pkg", "Paid.Pkg", "Mystery.Pkg", "Permissive.Pkg"]);
         licenses.Select(l => l.Risk).ShouldBe(
-            [LicenseRisk.StrongCopyleft, LicenseRisk.Unknown, LicenseRisk.Permissive]);
+            [LicenseRisk.StrongCopyleft, LicenseRisk.Proprietary, LicenseRisk.Unknown, LicenseRisk.Permissive]);
     }
 
     [Fact]

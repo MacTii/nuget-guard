@@ -27,11 +27,12 @@ An SPDX licence per package, classified by risk:
 | 🟢 Permissive | MIT, Apache-2.0, BSD, MS-PL | Attribution is normally the only obligation |
 | 🟡 Weak copyleft | LGPL, MPL-2.0, EPL | Modifications to the library usually have to be published |
 | 🔴 Strong copyleft | GPL, AGPL | Can extend to your own code — AGPL reaches network use |
-| ⚪ Unknown | `Commercial`, `MS-EULA`, missing metadata | Not an open-source licence, or nothing could be verified |
+| 🔒 Proprietary | `Commercial`, `MS-EULA` | A known licence, but not open source — the terms govern what you may do |
+| ⚪ Unknown | missing or unreadable metadata | Nothing could be verified, so someone has to look |
 
-🔴 and ⚪ deserve a look before shipping commercially. A common finding is a PDF or reporting library under AGPL-3.0, which needs a paid licence for closed-source products.
+🔴, 🔒 and ⚪ all deserve a look before shipping commercially. A common finding is a PDF or reporting library under AGPL-3.0, which needs a paid licence for closed-source products.
 
-Two labels appear in the ⚪ group that are not SPDX ids, because naming a licence is more use than calling it unknown: `Commercial` for known paid products, and `MS-EULA` for the proprietary terms many Microsoft packages ship. Both still count as unknown risk — they are not open source, so someone has to check the terms.
+🔒 uses two labels that are not SPDX ids: `Commercial` for known paid products, and `MS-EULA` for the Microsoft .NET Library terms that many older Microsoft packages ship instead of an open-source licence. They are separated from ⚪ deliberately — "this is a Microsoft EULA" and "nobody could tell" lead to different work.
 
 See [how licences are resolved](how-it-works.md#what-the-console-messages-mean).
 

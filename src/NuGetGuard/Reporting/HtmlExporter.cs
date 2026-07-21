@@ -127,6 +127,7 @@ public static class HtmlExporter
             <div class="card"><div class="num" style="color:#e67e22">{{report.Deprecated.Count}}</div><div class="lbl">Deprecated</div></div>
             <div class="card"><div class="num" style="color:#3498db">{{outdatedNum}}</div><div class="lbl">Outdated</div></div>
             <div class="card"><div class="num" style="color:#e74c3c">{{report.StrongCopyleftCount}}</div><div class="lbl">Strong Copyleft</div></div>
+            <div class="card"><div class="num" style="color:#8e44ad">{{report.ProprietaryLicenseCount}}</div><div class="lbl">Proprietary</div></div>
             <div class="card"><div class="num" style="color:#aaa">{{report.UnknownLicenseCount}}</div><div class="lbl">Unknown License</div></div>
             <div class="card"><div class="num" style="color:#9b59b6">{{report.RedundantCount}}</div><div class="lbl">Redundant</div></div>
             <div class="card"><div class="num" style="color:#16a085">{{report.UnusedCount}}</div><div class="lbl">Possibly Unused</div></div>
@@ -268,6 +269,7 @@ public static class HtmlExporter
         LicenseRisk.Permissive => "#27ae60",
         LicenseRisk.WeakCopyleft => "#e67e22",
         LicenseRisk.StrongCopyleft => "#e74c3c",
+        LicenseRisk.Proprietary => "#8e44ad",
         _ => "#aaa",
     };
 }

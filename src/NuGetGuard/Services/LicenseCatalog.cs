@@ -552,6 +552,9 @@ public static class LicenseCatalog
         ["CDDL-1.0"] = LicenseRisk.WeakCopyleft,
         ["EPL-1.0"] = LicenseRisk.WeakCopyleft,
         ["EPL-2.0"] = LicenseRisk.WeakCopyleft,
+        // Proprietary — a known licence, just not an open-source one
+        ["Commercial"] = LicenseRisk.Proprietary,
+        ["MS-EULA"] = LicenseRisk.Proprietary,
         // Strong copyleft (red)
         ["GPL-2.0"] = LicenseRisk.StrongCopyleft,
         ["GPL-2.0-only"] = LicenseRisk.StrongCopyleft,

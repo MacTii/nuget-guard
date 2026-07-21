@@ -24,9 +24,15 @@ public class LicenseCatalogTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("Unknown")]
-    [InlineData("Some-Proprietary-EULA")]
+    [InlineData("Some-Unrecognised-Text")]
     public void GetRisk_UnrecognizedValues_AreUnknown(string? license) =>
         LicenseCatalog.GetRisk(license).ShouldBe(LicenseRisk.Unknown);
+
+    [Theory]
+    [InlineData("Commercial")]
+    [InlineData("MS-EULA")]
+    public void GetRisk_NamedNonOpenSourceLicences_AreProprietary(string license) =>
+        LicenseCatalog.GetRisk(license).ShouldBe(LicenseRisk.Proprietary);
 
     [Fact]
     public void GetRisk_CompoundExpression_UsesFuzzyMatch() =>

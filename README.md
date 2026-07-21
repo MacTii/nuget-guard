@@ -22,7 +22,7 @@
 | 🚨 **Vulnerable** | Known CVEs, grouped by severity, with advisory links |
 | ⚠️ **Deprecated** | Deprecated packages and their recommended replacement |
 | 📦 **Outdated** | Latest available version for everything behind |
-| 📜 **Licenses** | License per package, classified 🟢 permissive / 🟡 weak / 🔴 strong copyleft / ⚪ unknown |
+| 📜 **Licenses** | License per package, classified 🟢 permissive / 🟡 weak / 🔴 strong copyleft / 🔒 proprietary / ⚪ unknown |
 | 🔗 **Redundant** | References another package already pulls in — the project-file line is superfluous |
 | 🧹 **Unused** | Packages whose namespaces appear nowhere in your source |
 
@@ -142,7 +142,7 @@ Opposite packages: Newtonsoft *is* used but needn't be listed; WebApi.Client *is
 ━━━ 📜 LICENSE AUDIT ━━━
   🔴 StrongCopyleft (1)
      📦 iText7 8.0.1  [AGPL-3.0]  → https://www.nuget.org/packages/iText7/8.0.1/license
-  ⚪ Unknown (1)
+  🔒 Proprietary (1)
      📦 WebGrease 1.6.0  [MS-EULA]  → http://www.microsoft.com/web/webpi/eula/aspnetcomponent_rtw_ENU.htm
 
 ━━━ 🔗 REDUNDANT PACKAGES (covered transitively) ━━━
@@ -159,7 +159,7 @@ Opposite packages: Newtonsoft *is* used but needn't be listed; WebApi.Client *is
   Outdated        : 📦 5
   Redundant       : 🔗 1
   Possibly unused : 🧹 1
-  Licenses total  : 12  (🔴 StrongCopyleft: 1  ⚪ Unknown: 1)
+  Licenses total  : 12  (🔴 StrongCopyleft: 1  🔒 Proprietary: 1  ⚪ Unknown: 0)
 ```
 
 All sections also appear in the HTML and CSV exports. Alternatives are shown in NuGet version-range notation, so `[6.5.1, )` means 6.5.1 or newer.

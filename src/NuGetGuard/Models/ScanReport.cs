@@ -14,6 +14,7 @@ public sealed class ScanReport
     public List<string> SkippedProjects { get; init; } = [];
 
     public int StrongCopyleftCount => Licenses.Count(l => l.Risk == LicenseRisk.StrongCopyleft);
+    public int ProprietaryLicenseCount => Licenses.Count(l => l.Risk == LicenseRisk.Proprietary);
     public int UnknownLicenseCount => Licenses.Count(l => l.Risk == LicenseRisk.Unknown);
     public int UnusedCount => Unused.Sum(g => g.Items.Count);
     public int RedundantCount => Redundant.Sum(g => g.Items.Count);
