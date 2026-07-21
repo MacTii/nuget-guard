@@ -31,6 +31,9 @@ public static class SpdxTextMatcher
         ("MIT", @"Permission is hereby granted.*free of charge|MIT License"),
         ("ISC", @"ISC License|Permission to use.*copy.*modify"),
         ("MS-PL", @"Microsoft Public License|Ms-PL"),
+        // Not an SPDX licence: the proprietary terms many Microsoft packages ship instead of one.
+        // Naming it is more use than "unknown", which reads as "nobody checked".
+        ("MS-EULA", @"MICROSOFT SOFTWARE LICENSE TERMS|MICROSOFT \.NET LIBRARY"),
         ("Unlicense", @"This is free and unencumbered software released into the public domain"),
         ("CC0-1.0", @"CC0 1\.0 Universal|Creative Commons.*Public Domain"),
         ("BSL-1.0", @"Boost Software License"),

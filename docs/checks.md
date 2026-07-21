@@ -27,9 +27,11 @@ An SPDX licence per package, classified by risk:
 | 🟢 Permissive | MIT, Apache-2.0, BSD, MS-PL | Attribution is normally the only obligation |
 | 🟡 Weak copyleft | LGPL, MPL-2.0, EPL | Modifications to the library usually have to be published |
 | 🔴 Strong copyleft | GPL, AGPL | Can extend to your own code — AGPL reaches network use |
-| ⚪ Unknown | commercial EULAs, missing metadata | Nothing was verified, so it needs a human |
+| ⚪ Unknown | `Commercial`, `MS-EULA`, missing metadata | Not an open-source licence, or nothing could be verified |
 
-🔴 and ⚪ deserve a look before shipping commercially. A frequent finding is the iText family (AGPL-3.0), which needs a paid licence for closed-source products.
+🔴 and ⚪ deserve a look before shipping commercially. A common finding is a PDF or reporting library under AGPL-3.0, which needs a paid licence for closed-source products.
+
+Two labels appear in the ⚪ group that are not SPDX ids, because naming a licence is more use than calling it unknown: `Commercial` for known paid products, and `MS-EULA` for the proprietary terms many Microsoft packages ship. Both still count as unknown risk — they are not open source, so someone has to check the terms.
 
 See [how licences are resolved](how-it-works.md#what-the-console-messages-mean).
 

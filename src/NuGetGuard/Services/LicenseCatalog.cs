@@ -235,8 +235,7 @@ public static class LicenseCatalog
         ["microsoft.data.sqlite"] = "MIT",
         ["microsoft.data.sqlite.core"] = "MIT",
         ["microsoft.data.sqlclient"] = "MIT",
-        ["microsoft.data.sqlclient.sni"] = "MIT",
-        ["microsoft.data.sqlclient.sni.runtime"] = "MIT",
+        // The SNI packages ship the Microsoft .NET Library terms, not the MIT licence of the parent
         ["microsoft.sqlserver.sqlmanagementobjects"] = "MIT",
         ["system.data.sqlclient"] = "MIT",
         ["linq2db"] = "MIT",
