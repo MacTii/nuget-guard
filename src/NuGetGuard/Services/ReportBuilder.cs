@@ -46,7 +46,7 @@ public sealed class ReportBuilder(NuGetClient nuget)
         string? legacyPackagesFolder = null,
         CancellationToken ct = default)
     {
-        var unresolved = metadata.Where(m => m.License is "See URL" or "Unknown").ToList();
+        var unresolved = metadata.Where(m => m.License == "Unknown").ToList();
         if (unresolved.Count == 0)
             return 0;
 
@@ -64,7 +64,7 @@ public sealed class ReportBuilder(NuGetClient nuget)
         }
 
         var toFetch = unresolved
-            .Where(m => m.License is "See URL" or "Unknown" && !string.IsNullOrEmpty(m.LicenseUrl))
+            .Where(m => m.License == "Unknown" && !string.IsNullOrEmpty(m.LicenseUrl))
             .ToList();
         if (toFetch.Count == 0)
             return resolvedOffline;
@@ -79,7 +79,7 @@ public sealed class ReportBuilder(NuGetClient nuget)
                     meta.License = resolved;
             });
 
-        return resolvedOffline + toFetch.Count(m => m.License is not ("See URL" or "Unknown"));
+        return resolvedOffline + toFetch.Count(m => m.License != "Unknown");
     }
 
     /// <summary>Vulnerable packages: solution-level dotnet scan with per-project fallback, merged with registration API data.</summary>

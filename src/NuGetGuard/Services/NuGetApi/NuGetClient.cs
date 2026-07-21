@@ -122,11 +122,12 @@ public sealed class NuGetClient(HttpClient http)
             metadata.License = known;
             metadata.LicenseUrl = entry.LicenseUrl;
         }
-        // 3. Derive from licenseUrl pattern (content fetch happens in a later pass)
+        // 3. Derive from licenseUrl pattern; the licence file and page content are tried in a later pass
         else if (!string.IsNullOrEmpty(entry.LicenseUrl))
         {
             metadata.LicenseUrl = entry.LicenseUrl;
-            metadata.License = LicenseUrlResolver.ResolveFromUrlPattern(entry.LicenseUrl) ?? "See URL";
+            if (LicenseUrlResolver.ResolveFromUrlPattern(entry.LicenseUrl) is { } fromUrl)
+                metadata.License = fromUrl;
         }
     }
 

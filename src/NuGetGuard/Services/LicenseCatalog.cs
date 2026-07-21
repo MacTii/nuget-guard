@@ -263,6 +263,11 @@ public static class LicenseCatalog
         ["fluentvalidation.dependencyinjectionextensions"] = "Apache-2.0",
         ["jquery.validation"] = "MIT",
         ["jquery.validation.unobtrusive"] = "MIT",
+        // Old releases link to a Microsoft EULA; version 4 declares MIT, as does the source repository
+        ["microsoft.jquery.unobtrusive.validation"] = "MIT",
+        ["microsoft.jquery.unobtrusive.ajax"] = "MIT",
+        ["modernizr"] = "MIT",
+        ["popper.js"] = "MIT",
         ["jquery"] = "MIT",
         ["jquery.ui.combined"] = "MIT",
         ["jquery.datatables"] = "MIT",

@@ -117,7 +117,7 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
     private static async Task ResolveLicensesWithProgressAsync(
         List<PackageMetadata> metadata, HttpClient http, string? legacyPackagesFolder)
     {
-        var unresolvedCount = metadata.Count(m => m.License is "See URL" or "Unknown");
+        var unresolvedCount = metadata.Count(m => m.License == "Unknown");
         if (unresolvedCount == 0)
             return;
 
