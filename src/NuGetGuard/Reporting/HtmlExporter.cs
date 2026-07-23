@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text;
 using NuGetGuard.Models;
+using NuGetGuard.Services;
 
 namespace NuGetGuard.Reporting;
 
@@ -74,7 +75,7 @@ public static class HtmlExporter
                 <tr>
                 <td><strong>{Encode(license.Package)}</strong></td>
                 <td><code>{Encode(license.Version)}</code></td>
-                <td><span class='lic-badge' style='background:{riskColor}'>{Encode(license.License)}</span></td>
+                <td>{LicenseBadges(license.License)}</td>
                 <td style='color:{riskColor};font-weight:600'>{license.Risk}</td>
                 <td>{urlCell}</td>
                 <td class='projects'>{Encode(license.Projects)}</td>
@@ -112,6 +113,7 @@ public static class HtmlExporter
             .pkg-cell{background:#fafbfc;border-right:1px solid #eaecef}
             .badge{display:inline-block;padding:.2rem .65rem;border-radius:20px;color:#fff;font-size:.72rem;font-weight:600}
             .lic-badge{display:inline-block;padding:.2rem .65rem;border-radius:20px;color:#fff;font-size:.78rem;font-weight:600}
+            .lic-op{display:inline-block;margin:0 .35rem;color:#999;font-size:.72rem;font-weight:600}
             .projects{color:#999;font-size:.78rem}
             code{background:#f4f4f4;padding:.1rem .4rem;border-radius:4px}
             a{text-decoration:none;color:#3498db}
@@ -272,4 +274,28 @@ public static class HtmlExporter
         LicenseRisk.Proprietary => "#8e44ad",
         _ => "#aaa",
     };
+
+    /// <summary>
+    /// One badge per licence, each coloured by its own risk. A compound expression
+    /// ("A OR B") becomes several badges with the operator between them, so a tri-licensed
+    /// package shows its red and yellow options side by side rather than one long label.
+    /// </summary>
+    private static string LicenseBadges(string license)
+    {
+        foreach (var op in new[] { " OR ", " AND " })
+        {
+            if (!license.Contains(op, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            var badges = license
+                .Split(op, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(term => Badge(term.Trim('(', ')', ' ')));
+            return string.Join($"<span class='lic-op'>{op.Trim()}</span>", badges);
+        }
+
+        return Badge(license);
+    }
+
+    private static string Badge(string license) =>
+        $"<span class='lic-badge' style='background:{RiskColor(LicenseCatalog.GetRisk(license))}'>{Encode(license)}</span>";
 }
