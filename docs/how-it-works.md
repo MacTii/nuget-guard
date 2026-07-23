@@ -43,10 +43,11 @@ N is the number of distinct package + version pairs across the solution. The sam
 Licences are resolved in five steps, stopping at the first that succeeds. Everything offline comes first, so the network is only used for what is left:
 
 1. `licenseExpression` from the NuGet API — a plain SPDX id such as `MIT`.
-2. A built-in database of well-known packages, for older ones that predate SPDX expressions.
+2. A curated database of packages a prefix cannot cover: licences that differ from their family, overrides where the package's own metadata is misleading, and proprietary packages. Entries a same-value prefix already handles were removed, so the database no longer grows for ordinary open-source packages.
 3. The shape of `licenseUrl` — `opensource.org/licenses/MIT` and similar URLs identify the licence on their own, without a request.
 4. **The licence file shipped inside the package.** Modern packages embed a licence file instead of linking to one, and the nuget.org page for those renders its text through scripting, so downloading it yields nothing. The restored package holds the file itself, so it is read from disk and matched against SPDX fingerprints.
-5. **Downloading the licence page and matching its text** — one HTTP request per package that still has an unidentified URL.
+5. **The ClearlyDefined API** — only with `--online-licenses`. It scans package contents and curates the declared licence, resolving packages none of the offline steps could. Off by default, because a scan should stay offline and deterministic; its sentinel values (`NOASSERTION`, `OTHER`, `LicenseRef-*`) are treated as unresolved rather than invented licences.
+6. **Downloading the licence page and matching its text** — one HTTP request per package that still has an unidentified URL.
 
 Both matching steps use the same fingerprints, ordered most specific first: the AGPL preamble before the GPL one, `Apache License, Version 2.0` before a bare mention of Apache.
 

@@ -30,6 +30,10 @@ public sealed class ScanSettings : CommandSettings
     [Description("Skip the unused-packages analysis (scans source files for package namespaces).")]
     public bool SkipUnused { get; init; }
 
+    [CommandOption("--online-licenses")]
+    [Description("Query the ClearlyDefined API for licences the offline steps could not identify. Slower and needs network, but resolves packages not in the built-in database.")]
+    public bool OnlineLicenses { get; init; }
+
     [CommandOption("--no-open")]
     [Description("Do not open the HTML report in the browser after export.")]
     public bool NoOpen { get; init; }

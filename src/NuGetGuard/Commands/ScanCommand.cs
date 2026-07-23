@@ -1,6 +1,7 @@
 using NuGetGuard.Models;
 using NuGetGuard.Reporting;
 using NuGetGuard.Services;
+using NuGetGuard.Services.ClearlyDefined;
 using NuGetGuard.Services.NuGetApi;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -46,7 +47,7 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
         var builder = new ReportBuilder(nuget);
 
         var metadata = await FetchMetadataWithProgressAsync(builder, allPackages.Values.ToList());
-        await ResolveLicensesWithProgressAsync(metadata, http, solution.PackagesFolder);
+        await ResolveLicensesWithProgressAsync(metadata, http, solution.PackagesFolder, settings.OnlineLicenses);
 
         var (vulnerable, skippedProjects) = await ReportBuilder.BuildVulnerableAsync(
             solution, metadata,
@@ -118,15 +119,19 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
     }
 
     private static async Task ResolveLicensesWithProgressAsync(
-        List<PackageMetadata> metadata, HttpClient http, string? legacyPackagesFolder)
+        List<PackageMetadata> metadata, HttpClient http, string? legacyPackagesFolder, bool online)
     {
         var unresolvedCount = metadata.Count(m => m.License == "Unknown");
         if (unresolvedCount == 0)
             return;
 
-        AnsiConsole.MarkupLine($"[cyan]🔄 Resolving {unresolvedCount} unidentified licenses...[/]");
+        var via = online ? ", ClearlyDefined included" : "";
+        AnsiConsole.MarkupLine($"[cyan]🔄 Resolving {unresolvedCount} unidentified licenses{via}...[/]");
+
+        var clearlyDefined = online ? new ClearlyDefinedClient(http) : null;
         var resolved = await ReportBuilder.ResolveRemainingLicensesAsync(
-            metadata, new LicenseUrlResolver(http), legacyPackagesFolder);
+            metadata, new LicenseUrlResolver(http), legacyPackagesFolder, clearlyDefined);
+
         AnsiConsole.MarkupLine(
             $"[green]✅ Identified {resolved} more, {unresolvedCount - resolved} left unknown[/]\n");
     }

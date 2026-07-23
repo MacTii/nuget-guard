@@ -1,5 +1,6 @@
 using NuGet.Versioning;
 using NuGetGuard.Models;
+using NuGetGuard.Services.ClearlyDefined;
 using NuGetGuard.Services.DotNet;
 using NuGetGuard.Services.DotNet.Models;
 using NuGetGuard.Services.NuGetApi;
@@ -38,48 +39,60 @@ public sealed class ReportBuilder(NuGetClient nuget)
     /// <summary>
     /// Second pass for licences the API did not identify. Everything offline is tried first —
     /// the known-package database, then the licence file the package ships — so the network is
-    /// only used for what is left.
+    /// only used for what is left. When <paramref name="clearlyDefined"/> is supplied, its API
+    /// is queried for whatever still remains before falling back to scraping the licence page.
     /// </summary>
     public static async Task<int> ResolveRemainingLicensesAsync(
         List<PackageMetadata> metadata,
         LicenseUrlResolver resolver,
         string? legacyPackagesFolder = null,
+        ClearlyDefinedClient? clearlyDefined = null,
         CancellationToken ct = default)
     {
         var unresolved = metadata.Where(m => m.License == "Unknown").ToList();
         if (unresolved.Count == 0)
             return 0;
 
-        var resolvedOffline = 0;
         foreach (var meta in unresolved)
         {
             var known = LicenseCatalog.GetKnownLicense(meta.Id)
                 ?? PackageLicenseFileReader.Read(meta.Id, meta.Version, legacyPackagesFolder);
 
             if (known is not null)
-            {
                 meta.License = known;
-                resolvedOffline++;
-            }
         }
 
-        var toFetch = unresolved
-            .Where(m => m.License == "Unknown" && !string.IsNullOrEmpty(m.LicenseUrl))
-            .ToList();
-        if (toFetch.Count == 0)
-            return resolvedOffline;
+        if (clearlyDefined is not null)
+            await ResolveWithAsync(Still(unresolved), ct,
+                (meta, token) => clearlyDefined.GetLicenseAsync(meta.Id, meta.Version, token));
+
+        await ResolveWithAsync(
+            Still(unresolved).Where(m => !string.IsNullOrEmpty(m.LicenseUrl)).ToList(), ct,
+            (meta, token) => resolver.ResolveFromContentAsync(meta.LicenseUrl, token));
+
+        return unresolved.Count(m => m.License != "Unknown");
+    }
+
+    private static List<PackageMetadata> Still(IEnumerable<PackageMetadata> packages) =>
+        packages.Where(m => m.License == "Unknown").ToList();
+
+    private static async Task ResolveWithAsync(
+        List<PackageMetadata> packages,
+        CancellationToken ct,
+        Func<PackageMetadata, CancellationToken, Task<string?>> resolve)
+    {
+        if (packages.Count == 0)
+            return;
 
         await Parallel.ForEachAsync(
-            toFetch,
+            packages,
             new ParallelOptions { MaxDegreeOfParallelism = 8, CancellationToken = ct },
             async (meta, token) =>
             {
-                var resolved = await resolver.ResolveFromContentAsync(meta.LicenseUrl, token);
+                var resolved = await resolve(meta, token);
                 if (resolved is not null)
                     meta.License = resolved;
             });
-
-        return resolvedOffline + toFetch.Count(m => m.License != "Unknown");
     }
 
     /// <summary>Vulnerable packages: solution-level dotnet scan with per-project fallback, merged with registration API data.</summary>

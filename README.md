@@ -82,6 +82,7 @@ nuget-guard --fail-on vulnerable             # CI: non-zero exit on findings
 | `--fail-on` | `None` | `Vulnerable` / `Deprecated` / `Outdated` / `StrongCopyleft` / `Unused` / `Any` |
 | `--skip-redundant` | `false` | Skip redundancy analysis |
 | `--skip-unused` | `false` | Skip unused-package analysis |
+| `--online-licenses` | `false` | Resolve leftover unknown licenses via the ClearlyDefined API (slower, needs network) |
 | `--no-open` | `false` | Don't open the HTML report |
 
 **Exit codes**
