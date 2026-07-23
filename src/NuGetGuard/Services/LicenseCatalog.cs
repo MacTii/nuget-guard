@@ -354,6 +354,7 @@ public static class LicenseCatalog
         ["antlr4.runtime.standard"] = "BSD-3-Clause",
         ["antlr"] = "BSD-3-Clause",
         ["antlr4"] = "BSD-3-Clause",
+        ["utf.unknown"] = "MPL-1.1",
         // ── File / Document ───────────────────────────────────────
         ["7zsharp"] = "LGPL-2.1",
         ["7z.libs"] = "LGPL-2.1",
@@ -380,8 +381,9 @@ public static class LicenseCatalog
         ["edtftpnet"] = "MIT",
         ["edtftpnet-pro"] = "Commercial",
         ["fluentstorage"] = "MIT",
-        ["ckeditor"] = "GPL-2.0",
-        ["ckeditor-full"] = "GPL-2.0",
+        // CKEditor 3/4 is tri-licensed — the licensee may pick GPL, LGPL or MPL, so the effective risk is weak copyleft
+        ["ckeditor"] = "GPL-2.0-or-later OR LGPL-2.1-or-later OR MPL-1.1",
+        ["ckeditor-full"] = "GPL-2.0-or-later OR LGPL-2.1-or-later OR MPL-1.1",
         ["chosen"] = "MIT",
         ["chosen.jquery"] = "MIT",
         // ── Imaging ───────────────────────────────────────────────
@@ -545,6 +547,7 @@ public static class LicenseCatalog
         ["LGPL-2.1-only"] = LicenseRisk.WeakCopyleft,
         ["LGPL-3.0"] = LicenseRisk.WeakCopyleft,
         ["LGPL-3.0-only"] = LicenseRisk.WeakCopyleft,
+        ["MPL-1.1"] = LicenseRisk.WeakCopyleft,
         ["MPL-2.0"] = LicenseRisk.WeakCopyleft,
         ["EUPL-1.1"] = LicenseRisk.WeakCopyleft,
         ["EUPL-1.2"] = LicenseRisk.WeakCopyleft,
@@ -595,7 +598,17 @@ public static class LicenseCatalog
         if (LicenseRiskMap.TryGetValue(license, out var risk))
             return risk;
 
-        // Fuzzy match for compound expressions like "MIT OR Apache-2.0"
+        // Disjunctive licence ("A OR B"): the licensee picks any one, so the effective
+        // risk is the most permissive term. A tri-licensed package (GPL OR LGPL OR MPL)
+        // is therefore weak copyleft, not strong.
+        if (ContainsOperator(license, "OR"))
+            return Combine(license, "OR", pickMostPermissive: true);
+
+        // Conjunctive licence ("A AND B"): every term applies, so take the most restrictive.
+        if (ContainsOperator(license, "AND"))
+            return Combine(license, "AND", pickMostPermissive: false);
+
+        // Fuzzy match for a single identifier we don't hold verbatim
         if (license.Contains("GPL", StringComparison.OrdinalIgnoreCase) &&
             !license.Contains("LGPL", StringComparison.OrdinalIgnoreCase))
             return LicenseRisk.StrongCopyleft;
@@ -615,5 +628,34 @@ public static class LicenseCatalog
             return LicenseRisk.Permissive;
 
         return LicenseRisk.Unknown;
+    }
+
+    private static bool ContainsOperator(string license, string op) =>
+        license.Contains($" {op} ", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Classifies each term of a compound expression and combines them. For a disjunctive
+    /// expression the most permissive term wins; for a conjunctive one, the most restrictive.
+    /// Unknown terms are ignored — one unrecognised half must not make the whole thing look safe.
+    /// </summary>
+    private static LicenseRisk Combine(string license, string op, bool pickMostPermissive)
+    {
+        var separator = $" {op} ";
+        var terms = license.Split(separator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        LicenseRisk? chosen = null;
+        foreach (var term in terms)
+        {
+            var risk = GetRisk(term.Trim('(', ')', ' '));
+            if (risk == LicenseRisk.Unknown)
+                continue;
+
+            // Higher enum value == more permissive.
+            var better = pickMostPermissive ? (int)risk > (int)(chosen ?? risk) : (int)risk < (int)(chosen ?? risk);
+            if (chosen is null || better)
+                chosen = risk;
+        }
+
+        return chosen ?? LicenseRisk.Unknown;
     }
 }
