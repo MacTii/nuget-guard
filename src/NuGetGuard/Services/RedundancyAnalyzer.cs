@@ -1,3 +1,4 @@
+using NuGet.Versioning;
 using NuGetGuard.Models;
 using NuGetGuard.Services.NuGetApi;
 
@@ -58,11 +59,12 @@ public sealed class RedundancyAnalyzer(NuGetClient nuget)
                 projectRefPackages.TryAdd(id, (version, refName));
         }
 
-        // Transitive closure of every direct package
-        var closures = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+        // Transitive closure of every direct package: covered id → the highest dependency floor
+        // reached for it, i.e. the version that would resolve if the direct reference were removed.
+        var closures = new Dictionary<string, Dictionary<string, NuGetVersion?>>(StringComparer.OrdinalIgnoreCase);
         foreach (var (id, version) in direct)
         {
-            var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var visited = new Dictionary<string, NuGetVersion?>(StringComparer.OrdinalIgnoreCase);
             await WalkClosureAsync(id, version, packagesFolder, versionLookup, visited, ct);
             closures[id] = visited;
         }
@@ -83,14 +85,14 @@ public sealed class RedundancyAnalyzer(NuGetClient nuget)
             {
                 if (string.Equals(candidate, other, StringComparison.OrdinalIgnoreCase))
                     continue;
-                if (!closures[other].Contains(candidate))
+                if (!closures[other].TryGetValue(candidate, out var coveredFloor))
                     continue;
 
-                var sourceNote = projectRefPackages.ContainsKey(other)
-                    ? $"also in ProjectRef → {projectRefPackages[other].Source}"
-                    : "this project";
+                var note = VersionNote(candidateVersion, coveredFloor);
+                if (projectRefPackages.ContainsKey(other))
+                    note = Join($"also in ProjectRef → {projectRefPackages[other].Source}", note);
 
-                group.Items.Add(new RedundantPackage(candidate, candidateVersion, other, otherVersion, sourceNote));
+                group.Items.Add(new RedundantPackage(candidate, candidateVersion, other, otherVersion, note));
                 break;
             }
         }
@@ -130,29 +132,58 @@ public sealed class RedundancyAnalyzer(NuGetClient nuget)
         string version,
         string? packagesFolder,
         IReadOnlyDictionary<string, string> versionLookup,
-        HashSet<string> visited,
+        Dictionary<string, NuGetVersion?> visited,
         CancellationToken ct)
     {
-        var dependencies = await GetDependencyIdsAsync(id, version, packagesFolder, ct);
+        var dependencies = await GetDependenciesAsync(id, version, packagesFolder, ct);
 
-        foreach (var depId in dependencies)
+        foreach (var dep in dependencies)
         {
-            if (!visited.Add(depId))
+            var floor = ParseFloor(dep.VersionRange);
+
+            if (visited.TryGetValue(dep.Id, out var existing))
+            {
+                // Reached again via another path — NuGet resolves to the highest floor, so keep it.
+                if (floor is not null && (existing is null || floor > existing))
+                    visited[dep.Id] = floor;
                 continue;
-            if (versionLookup.TryGetValue(depId, out var depVersion))
-                await WalkClosureAsync(depId, depVersion, packagesFolder, versionLookup, visited, ct);
+            }
+
+            visited[dep.Id] = floor;
+            if (versionLookup.TryGetValue(dep.Id, out var depVersion))
+                await WalkClosureAsync(dep.Id, depVersion, packagesFolder, versionLookup, visited, ct);
         }
     }
 
-    private async Task<IReadOnlyList<string>> GetDependencyIdsAsync(
+    private async Task<IReadOnlyList<DependencyRef>> GetDependenciesAsync(
         string id, string version, string? packagesFolder, CancellationToken ct)
     {
         // 1. Local nuspec from packages folder (legacy projects) — no HTTP
-        var local = NuspecDependencyReader.ReadDependencyIds(packagesFolder, id, version);
+        var local = NuspecDependencyReader.ReadDependencies(packagesFolder, id, version);
         if (local.Count > 0)
             return local;
 
         // 2. NuGet registration API fallback (cached inside NuGetClient)
-        return await nuget.GetDependencyIdsAsync(id, version, ct);
+        return await nuget.GetDependenciesAsync(id, version, ct);
     }
+
+    private static NuGetVersion? ParseFloor(string? range) =>
+        !string.IsNullOrWhiteSpace(range) && VersionRange.TryParse(range, out var parsed)
+            ? parsed.MinVersion
+            : null;
+
+    /// <summary>
+    /// The version relationship between a pinned reference and the floor its covering chain imposes.
+    /// Blank when they match (a safe no-op removal) or cannot be compared.
+    /// </summary>
+    private static string VersionNote(string pinnedVersion, NuGetVersion? coveredFloor)
+    {
+        if (coveredFloor is null || !NuGetVersion.TryParse(pinnedVersion, out var pinned) || pinned == coveredFloor)
+            return "";
+
+        return $"⚠ version differs — transitive brings {coveredFloor}";
+    }
+
+    private static string Join(string a, string b) =>
+        string.IsNullOrEmpty(b) ? a : string.IsNullOrEmpty(a) ? b : $"{a}; {b}";
 }

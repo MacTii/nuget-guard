@@ -83,9 +83,9 @@ Steps 4 and 5 share `SpdxTextMatcher`, whose fingerprints are ordered most speci
 
 `RedundancyAnalyzer` answers "is this reference already provided by another one?".
 
-For each project it builds the transitive closure of every direct reference, then reports any direct reference contained in another's closure. `WalkClosureAsync` recurses through dependency ids, guarded by a `HashSet` that doubles as the cycle guard — `visited.Add` returning false ends that branch.
+For each project it builds the transitive closure of every direct reference, then reports any direct reference contained in another's closure. `WalkClosureAsync` records, per covered id, the highest dependency **floor** (`VersionRange.MinVersion`) reached for it — the version that would resolve if the direct reference were dropped. The map doubles as the cycle guard: an id already present is not walked again, only its floor is raised.
 
-Dependencies come from the local `.nuspec` first (`NuspecDependencyReader`, no network) and from the registration API otherwise. For SDK projects it additionally reports packages already referenced by a referenced project, comparing the two versions: an equal version means removal is a safe no-op, a differing one is flagged because removing the reference lets the referenced project's version resolve instead. Framework polyfills (`FrameworkPolyfills`) are never reported — they exist precisely to satisfy other packages.
+Dependencies (id and range) come from the local `.nuspec` first (`NuspecDependencyReader`, no network) and from the registration API otherwise. `VersionNote` compares the pinned version against that floor, so both transitive and referenced-project redundancies flag a mismatch rather than presenting it as a harmless duplicate. Framework polyfills (`FrameworkPolyfills`) are never reported — they exist precisely to satisfy other packages.
 
 ## Unused packages
 

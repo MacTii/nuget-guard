@@ -42,10 +42,11 @@ Direct references another direct reference — or a referenced project — alrea
 
 Removing one is a judgement call. If your code uses the package directly, keeping the explicit reference is defensible: relying on someone else's dependency means an upgrade elsewhere can remove your access to it without warning. If your code never touches it, drop the line.
 
-**Version mismatches are flagged.** When a package comes from a referenced project (`ProjectRef → …`), the *Note* column compares the two versions:
+**Version mismatches are flagged** in the *Note* column, both when the package is covered transitively and when it comes from a referenced project:
 
 - same version → removing the explicit reference is a safe no-op, so the note is blank;
-- different version → the note reads **⚠ version differs — removing changes it**, because dropping your reference lets the referenced project's version resolve instead. The two versions are shown side by side (your *Version* column vs. the one next to *Already pulled in by*).
+- covered transitively at a different floor → **⚠ version differs — transitive brings X**, where X is the version the covering chain would resolve to if you dropped your reference. A package pinned *above* the floor drops to it on removal; one pinned *below* it (like Autofac 4.9.1 while a package needs ≥ 6.0.0) reveals an outright version conflict NuGet resolves in the floor's favour;
+- from a referenced project at a different version → **⚠ version differs — removing changes it**.
 
 In `packages.config` projects these findings are **informational only** — that file lists the full closure by design, so there is nothing to remove.
 

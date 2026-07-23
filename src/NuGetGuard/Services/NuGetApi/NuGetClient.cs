@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Text.Json;
 using NuGet.Versioning;
 using NuGetGuard.Models;
+using NuGetGuard.Services;
 using NuGetGuard.Services.NuGetApi.Models;
 
 namespace NuGetGuard.Services.NuGetApi;
@@ -15,7 +16,7 @@ public sealed class NuGetClient(HttpClient http)
 
     private readonly ConcurrentDictionary<string, Task<RegistrationIndex?>> _indexCache =
         new(StringComparer.OrdinalIgnoreCase);
-    private readonly ConcurrentDictionary<string, Task<IReadOnlyList<string>>> _dependencyCache =
+    private readonly ConcurrentDictionary<string, Task<IReadOnlyList<DependencyRef>>> _dependencyCache =
         new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, Task<string?>> _latestVersionCache =
         new(StringComparer.OrdinalIgnoreCase);
@@ -39,11 +40,11 @@ public sealed class NuGetClient(HttpClient http)
         return metadata;
     }
 
-    public Task<IReadOnlyList<string>> GetDependencyIdsAsync(string id, string version, CancellationToken ct = default)
+    public Task<IReadOnlyList<DependencyRef>> GetDependenciesAsync(string id, string version, CancellationToken ct = default)
     {
         return _dependencyCache.GetOrAdd($"{id}|{version}", _ => FetchAsync());
 
-        async Task<IReadOnlyList<string>> FetchAsync()
+        async Task<IReadOnlyList<DependencyRef>> FetchAsync()
         {
             var entry = await GetCatalogEntryAsync(id, version, ct);
             if (entry?.DependencyGroups is null)
@@ -51,11 +52,10 @@ public sealed class NuGetClient(HttpClient http)
 
             return entry.DependencyGroups
                 .SelectMany(g => g.Dependencies ?? [])
-                .Select(d => d.Id)
-                .Where(depId => !string.IsNullOrEmpty(depId))
-                .Select(depId => depId!)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(depId => depId, StringComparer.OrdinalIgnoreCase)
+                .Where(d => !string.IsNullOrEmpty(d.Id))
+                .GroupBy(d => d.Id!, StringComparer.OrdinalIgnoreCase)
+                .Select(g => new DependencyRef(g.Key, g.First().Range))
+                .OrderBy(d => d.Id, StringComparer.OrdinalIgnoreCase)
                 .ToList();
         }
     }
