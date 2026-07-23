@@ -113,7 +113,7 @@ public static class HtmlExporter
             .pkg-cell{background:#fafbfc;border-right:1px solid #eaecef}
             .badge{display:inline-block;padding:.2rem .65rem;border-radius:20px;color:#fff;font-size:.72rem;font-weight:600}
             .lic-badge{display:inline-block;padding:.2rem .65rem;border-radius:20px;color:#fff;font-size:.78rem;font-weight:600}
-            .lic-op{display:inline-block;margin:0 .35rem;color:#999;font-size:.72rem;font-weight:600}
+            .lic-badges{display:inline-flex;flex-wrap:wrap;gap:.3rem;vertical-align:middle}
             .projects{color:#999;font-size:.78rem}
             code{background:#f4f4f4;padding:.1rem .4rem;border-radius:4px}
             a{text-decoration:none;color:#3498db}
@@ -277,8 +277,8 @@ public static class HtmlExporter
 
     /// <summary>
     /// One badge per licence, each coloured by its own risk. A compound expression
-    /// ("A OR B") becomes several badges with the operator between them, so a tri-licensed
-    /// package shows its red and yellow options side by side rather than one long label.
+    /// ("A OR B") becomes several badges sitting side by side, so a tri-licensed package
+    /// shows its red and yellow options at a glance instead of one long label.
     /// </summary>
     private static string LicenseBadges(string license)
     {
@@ -290,7 +290,7 @@ public static class HtmlExporter
             var badges = license
                 .Split(op, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .Select(term => Badge(term.Trim('(', ')', ' ')));
-            return string.Join($"<span class='lic-op'>{op.Trim()}</span>", badges);
+            return $"<span class='lic-badges'>{string.Concat(badges)}</span>";
         }
 
         return Badge(license);
