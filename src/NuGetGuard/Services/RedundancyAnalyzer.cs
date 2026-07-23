@@ -107,8 +107,14 @@ public sealed class RedundancyAnalyzer(NuGetClient nuget)
                 if (!projectRefPackages.TryGetValue(candidate, out var source))
                     continue;
 
+                // Same version → the explicit reference is a safe no-op to remove. A different
+                // version means removing it changes what resolves, so flag that rather than
+                // presenting it as a harmless duplicate.
                 var label = $"ProjectRef → {source.Source}";
-                group.Items.Add(new RedundantPackage(candidate, candidateVersion, label, source.Version, label));
+                var note = string.Equals(source.Version, candidateVersion, StringComparison.OrdinalIgnoreCase)
+                    ? ""
+                    : "⚠ version differs — removing changes it";
+                group.Items.Add(new RedundantPackage(candidate, candidateVersion, label, source.Version, note));
             }
         }
 

@@ -181,13 +181,19 @@ public static class HtmlExporter
 
             foreach (var item in group.Items)
             {
+                var note = string.IsNullOrEmpty(item.CoveredBySource)
+                    ? "—"
+                    : item.CoveredBySource.StartsWith('⚠')
+                        ? $"<span style='color:#e67e22;font-weight:600'>{Encode(item.CoveredBySource)}</span>"
+                        : $"<span class='projects'>{Encode(item.CoveredBySource)}</span>";
+
                 rows.AppendLine($"""
                     <tr>
                     <td class='projects'>{Encode(projectLabel)}</td>
                     <td><strong>{Encode(item.Package)}</strong></td>
                     <td><code>{Encode(item.Version)}</code></td>
                     <td>{Encode(item.CoveredBy)} <code>{Encode(item.CoveredByVersion)}</code></td>
-                    <td class='projects'>{Encode(item.CoveredBySource)}</td>
+                    <td>{note}</td>
                     </tr>
                     """);
             }
@@ -198,7 +204,7 @@ public static class HtmlExporter
             <div class='build-error'>ℹ️ These direct references are already pulled in transitively by another package or a referenced project. In <code>packages.config</code> projects the full closure is listed by design, so entries there are informational only.</div>
             <table>
             <thead>
-            <tr><th>Project</th><th>Package</th><th>Version</th><th>Already pulled in by</th><th>Source</th></tr>
+            <tr><th>Project</th><th>Package</th><th>Version</th><th>Already pulled in by</th><th>Note</th></tr>
             </thead>
             <tbody>
             {rows}

@@ -150,7 +150,9 @@ public static class ConsoleReporter
             var color = group.IsLegacy ? "grey50" : "fuchsia";
             foreach (var item in group.Items)
             {
-                var sourceLabel = item.CoveredBySource != "this project" ? $"  ({item.CoveredBySource})" : "";
+                var sourceLabel = item.CoveredBySource is not ("" or "this project")
+                    ? $"  ({item.CoveredBySource})"
+                    : "";
                 AnsiConsole.MarkupLine(
                     $"     [{color}]🔗 {Markup.Escape(item.Package)} {Markup.Escape(item.Version)}  ← pulled by  {Markup.Escape(item.CoveredBy)} {Markup.Escape(item.CoveredByVersion)}{Markup.Escape(sourceLabel)}[/]");
             }
