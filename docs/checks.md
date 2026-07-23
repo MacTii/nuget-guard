@@ -42,6 +42,11 @@ Direct references another direct reference — or a referenced project — alrea
 
 Removing one is a judgement call. If your code uses the package directly, keeping the explicit reference is defensible: relying on someone else's dependency means an upgrade elsewhere can remove your access to it without warning. If your code never touches it, drop the line.
 
+**Version mismatches are flagged.** When a package comes from a referenced project (`ProjectRef → …`), the *Note* column compares the two versions:
+
+- same version → removing the explicit reference is a safe no-op, so the note is blank;
+- different version → the note reads **⚠ version differs — removing changes it**, because dropping your reference lets the referenced project's version resolve instead. The two versions are shown side by side (your *Version* column vs. the one next to *Already pulled in by*).
+
 In `packages.config` projects these findings are **informational only** — that file lists the full closure by design, so there is nothing to remove.
 
 ## 🧹 Possibly unused

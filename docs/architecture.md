@@ -85,7 +85,7 @@ Steps 4 and 5 share `SpdxTextMatcher`, whose fingerprints are ordered most speci
 
 For each project it builds the transitive closure of every direct reference, then reports any direct reference contained in another's closure. `WalkClosureAsync` recurses through dependency ids, guarded by a `HashSet` that doubles as the cycle guard — `visited.Add` returning false ends that branch.
 
-Dependencies come from the local `.nuspec` first (`NuspecDependencyReader`, no network) and from the registration API otherwise. For SDK projects it additionally reports packages already referenced by a referenced project. Framework polyfills (`FrameworkPolyfills`) are never reported — they exist precisely to satisfy other packages.
+Dependencies come from the local `.nuspec` first (`NuspecDependencyReader`, no network) and from the registration API otherwise. For SDK projects it additionally reports packages already referenced by a referenced project, comparing the two versions: an equal version means removal is a safe no-op, a differing one is flagged because removing the reference lets the referenced project's version resolve instead. Framework polyfills (`FrameworkPolyfills`) are never reported — they exist precisely to satisfy other packages.
 
 ## Unused packages
 
