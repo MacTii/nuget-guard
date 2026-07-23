@@ -358,6 +358,9 @@ public static class LicenseCatalog
         // ── File / Document ───────────────────────────────────────
         ["7zsharp"] = "LGPL-2.1",
         ["7z.libs"] = "LGPL-2.1",
+        ["sevenzipsharp"] = "LGPL-3.0",
+        ["squid-box.sevenzipsharp"] = "LGPL-3.0",
+        ["sevenzipsharp.interop"] = "LGPL-2.1",
         ["dotnetzip"] = "MS-PL",
         ["sharpziplib"] = "MIT",
         ["ionmezle.sharpziplib"] = "MIT",

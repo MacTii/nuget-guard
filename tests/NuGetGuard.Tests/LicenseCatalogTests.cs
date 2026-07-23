@@ -72,6 +72,7 @@ public class LicenseCatalogTests
     [InlineData("hangfire", "LGPL-3.0")]
     [InlineData("EntityFramework", "MIT")]
     [InlineData("UTF.Unknown", "MPL-1.1")]
+    [InlineData("SevenZipSharp", "LGPL-3.0")]
     public void GetKnownLicense_ExactMatch_ReturnsLicense(string packageId, string expected) =>
         LicenseCatalog.GetKnownLicense(packageId).ShouldBe(expected);
 

@@ -11,6 +11,9 @@ public class LicenseUrlResolverTests
     [InlineData("https://licenses.nuget.org/MIT", "MIT")]
     [InlineData("https://www.gnu.org/licenses/gpl-3.0.html", "GPL-3.0")]
     [InlineData("https://www.gnu.org/licenses/lgpl-2.1.txt", "LGPL-2.1")]
+    [InlineData("http://www.gnu.org/licenses/lgpl.html", "LGPL-3.0")]
+    [InlineData("http://www.gnu.org/licenses/gpl.html", "GPL-3.0")]
+    [InlineData("http://www.gnu.org/licenses/agpl.html", "AGPL-3.0")]
     [InlineData("http://www.mozilla.org/MPL/2.0/", "MPL-2.0")]
     [InlineData("https://github.com/dotnet/runtime/blob/main/LICENSE.TXT", "MIT")]
     public void ResolveFromUrlPattern_KnownHosts_ReturnSpdx(string url, string expected) =>

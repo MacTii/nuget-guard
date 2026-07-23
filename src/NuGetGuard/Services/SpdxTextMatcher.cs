@@ -14,12 +14,14 @@ public static class SpdxTextMatcher
     /// </summary>
     private static readonly (string Spdx, string Pattern)[] Patterns =
     [
+        // Lesser and Affero come before plain GPL: their pages quote the GPL heavily, so a GPL
+        // pattern checked first would misread an LGPL or AGPL licence as strong copyleft.
         ("AGPL-3.0", @"GNU AFFERO GENERAL PUBLIC LICENSE.*Version 3|AGPL.?3\.0"),
-        ("GPL-3.0", @"GNU GENERAL PUBLIC LICENSE.*Version 3(?!.*Affero)|GPL.?3\.0"),
-        ("GPL-2.0", @"GNU GENERAL PUBLIC LICENSE.*Version 2(?!.*Affero)|GPL.?2\.0"),
         ("LGPL-3.0", @"GNU LESSER GENERAL PUBLIC LICENSE.*Version 3|LGPL.?3\.0"),
         ("LGPL-2.1", @"GNU LESSER GENERAL PUBLIC LICENSE.*Version 2\.1|LGPL.?2\.1"),
         ("LGPL-2.0", @"GNU LESSER GENERAL PUBLIC LICENSE.*Version 2(?!\.1)|LGPL.?2\.0"),
+        ("GPL-3.0", @"GNU GENERAL PUBLIC LICENSE.*Version 3(?!.*Affero)|GPL.?3\.0"),
+        ("GPL-2.0", @"GNU GENERAL PUBLIC LICENSE.*Version 2(?!.*Affero)|GPL.?2\.0"),
         ("MPL-2.0", @"Mozilla Public License.*Version 2\.0|MPL.?2\.0"),
         ("MPL-1.1", @"Mozilla Public License.*Version 1\.1|MPL.?1\.1"),
         ("EPL-2.0", @"Eclipse Public License.*2\.0|EPL.?2\.0"),

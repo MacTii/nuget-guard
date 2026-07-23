@@ -17,6 +17,10 @@ public sealed class LicenseUrlResolver(HttpClient http)
         ("gnu.org/licenses/lgpl-2", "LGPL-2.1"),
         ("gnu.org/licenses/lgpl-3", "LGPL-3.0"),
         ("gnu.org/licenses/agpl", "AGPL-3.0"),
+        // Unversioned GNU pages point at the current version (v3). The lesser/affero
+        // entries must stay above the plain gpl one so the more specific match wins.
+        ("gnu.org/licenses/lgpl", "LGPL-3.0"),
+        ("gnu.org/licenses/gpl", "GPL-3.0"),
         ("mozilla.org/MPL/2.0", "MPL-2.0"),
         ("mozilla.org/MPL/MPL-1.1", "MPL-1.1"),
         ("mozilla.org/MPL/1.1", "MPL-1.1"),
