@@ -27,6 +27,19 @@
     <PackageIcon>icon.png</PackageIcon>
   </PropertyGroup>
 
+  <!--
+    Debug symbols record the full path of every source file. Left alone that ships
+    the build machine's directory layout to everyone who installs the tool.
+    Normalising them replaces those paths with a deterministic '/_/' root, which
+    also makes the same source produce a byte-identical package. Release only, so
+    local debugging keeps its real paths.
+  -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+  </PropertyGroup>
+
   <ItemGroup>
     <None Include="..\..\NUGET.md" Pack="true" PackagePath="\README.md" />
     <None Include="..\..\icon.png" Pack="true" PackagePath="\" />
