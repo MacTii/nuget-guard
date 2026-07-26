@@ -51,6 +51,7 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
         var builder = new ReportBuilder(nuget);
 
         var metadata = await FetchMetadataWithProgressAsync(builder, allPackages.Values.ToList());
+        ApplyLicenseOverrides(metadata, settings.LicenseMap, solution.SolutionFile.DirectoryName!);
         await ResolveLicensesWithProgressAsync(metadata, http, solution.PackagesFolder, settings.OnlineLicenses);
 
         var (vulnerable, skippedProjects) = await ReportBuilder.BuildVulnerableAsync(
@@ -143,8 +144,33 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
         var resolved = await ReportBuilder.ResolveRemainingLicensesAsync(
             metadata, new LicenseUrlResolver(http), legacyPackagesFolder, clearlyDefined);
 
-        AnsiConsole.MarkupLine(
-            $"[green]✅ Identified {resolved} more, {unresolvedCount - resolved} left unknown[/]\n");
+        var stillUnknown = unresolvedCount - resolved;
+        AnsiConsole.MarkupLine($"[green]✅ Identified {resolved} more, {stillUnknown} left unknown[/]");
+
+        // Anything still unknown has a next step, so say what it is rather than leaving a bare number.
+        if (stillUnknown > 0)
+        {
+            AnsiConsole.MarkupLine(online
+                ? $"[grey]   Nothing published a licence for {(stillUnknown == 1 ? "it" : "them")}. Declare your own in {LicenseOverrides.ConventionalFileName} — see the docs.[/]"
+                : "[grey]   Try [/][cyan]--online-licenses[/][grey], or declare your own in " + LicenseOverrides.ConventionalFileName + ".[/]");
+        }
+
+        AnsiConsole.WriteLine();
+    }
+
+    private static void ApplyLicenseOverrides(
+        List<PackageMetadata> metadata, string? explicitPath, string solutionDirectory)
+    {
+        var path = LicenseOverrides.Locate(explicitPath, solutionDirectory);
+        if (path is null)
+            return;
+
+        var applied = LicenseOverrides.Apply(metadata, LicenseOverrides.Load(path));
+        var name = Path.GetFileName(path);
+
+        AnsiConsole.MarkupLine(applied > 0
+            ? $"[green]✅ Applied {applied} licence {(applied == 1 ? "override" : "overrides")} from {Markup.Escape(name)}[/]\n"
+            : $"[yellow]⚠️  {Markup.Escape(name)} matched no packages — check the ids in it.[/]\n");
     }
 
     private static async Task<List<RedundantProjectGroup>> AnalyzeRedundantWithProgressAsync(
