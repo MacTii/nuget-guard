@@ -1,32 +1,43 @@
+<div align="center">
+
 # 🛡️ NuGetGuard
 
-> Audits NuGet packages in .NET solutions — vulnerabilities, deprecations, outdated versions, license risk, redundant and unused references.
+**Audit every NuGet package in your .NET solution in one command.**
+Find vulnerable, deprecated and outdated packages, spot risky or proprietary licences, and clean up references you no longer need — as a terminal report or a shareable HTML page.
 
 ![.NET 8+](https://img.shields.io/badge/.NET-8%2B-512BD4?logo=dotnet)
 ![dotnet tool](https://img.shields.io/badge/dotnet-tool-0075ca)
 ![nuget.org](https://img.shields.io/badge/nuget.org-not%20published-lightgrey?logo=nuget)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green)
+![Tests](https://img.shields.io/badge/tests-165%20passing-3fb950)
+
+[**Install**](#-install) · [**Usage**](#-usage) · [**What it checks**](#-what-it-checks) · [**Docs**](docs/) · [**CI/CD**](#️-cicd)
+
+![NuGetGuard scanning a solution](docs/demo.svg)
+
+</div>
 
 <!-- After publishing to nuget.org, replace the static nuget.org badge above with the live ones:
      ![NuGet](https://img.shields.io/nuget/v/NuGetGuard?logo=nuget)
      ![Downloads](https://img.shields.io/nuget/dt/NuGetGuard?logo=nuget)
      They render "package not found" until the package actually exists. -->
 
-
 ---
 
 ## ✨ What it checks
 
-| Check | Finds |
-|---|---|
-| 🚨 **Vulnerable** | Known CVEs, grouped by severity, with advisory links |
-| ⚠️ **Deprecated** | Deprecated packages and their recommended replacement |
-| 📦 **Outdated** | Latest available version for everything behind |
-| 📜 **Licenses** | License per package, classified 🟢 permissive / 🟡 weak / 🔴 strong copyleft / 🔒 proprietary / ⚪ unknown |
-| 🔗 **Redundant** | References another package already pulls in — the project-file line is superfluous |
-| 🧹 **Unused** | Packages whose namespaces appear nowhere in your source |
+One scan runs six checks over every project in the solution:
 
-Works with SDK-style projects, legacy `packages.config` (.NET Framework), Central Package Management and both `.sln` / `.slnx`.
+| Check | What you get |
+|---|---|
+| 🚨 **Vulnerable** | Known CVEs, by severity, each linked to its advisory |
+| ⚠️ **Deprecated** | Deprecated packages and the replacement the author recommends |
+| 📦 **Outdated** | The latest version for everything you're behind on |
+| 📜 **Licenses** | A licence per package, classified 🟢 permissive · 🟡 weak · 🔴 strong copyleft · 🔒 proprietary · ⚪ unknown |
+| 🔗 **Redundant** | References already pulled in elsewhere — and whether removing one changes the resolved version |
+| 🧹 **Unused** | Packages whose namespaces appear nowhere in your code |
+
+Works with modern SDK-style projects, legacy `.NET Framework` (`packages.config`), Central Package Management, and both `.sln` and `.slnx`. The scan is read-only, stays offline by default, and never runs your packages' code.
 
 📚 **[Documentation](docs/)** — [how it works](docs/how-it-works.md) · [the checks in depth](docs/checks.md) · [troubleshooting](docs/troubleshooting.md) · [architecture](docs/architecture.md)
 
