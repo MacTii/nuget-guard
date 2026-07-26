@@ -20,19 +20,19 @@ The newest stable release for everything behind it; prereleases are ignored. SDK
 
 ## 📜 Licences
 
-An SPDX licence per package, classified by risk:
+A licence per package, classified by risk:
 
 | Risk | Examples | Why it matters |
 |---|---|---|
 | 🟢 Permissive | MIT, Apache-2.0, BSD, MS-PL | Attribution is normally the only obligation |
 | 🟡 Weak copyleft | LGPL, MPL-2.0, EPL | Modifications to the library usually have to be published |
 | 🔴 Strong copyleft | GPL, AGPL | Can extend to your own code — AGPL reaches network use |
-| 🔒 Proprietary | `Commercial`, `MS-EULA` | A known licence, but not open source — the terms govern what you may do |
+| 🔒 Proprietary | `Commercial`, `MS-EULA`, `Oracle-FUTC` | A known licence, but not open source — the terms govern what you may do |
 | ⚪ Unknown | missing or unreadable metadata | Nothing could be verified, so someone has to look |
 
 🔴, 🔒 and ⚪ all deserve a look before shipping commercially. A common finding is a PDF or reporting library under AGPL-3.0, which needs a paid licence for closed-source products.
 
-🔒 uses two labels that are not SPDX ids: `Commercial` for known paid products, and `MS-EULA` for the Microsoft .NET Library terms that many older Microsoft packages ship instead of an open-source licence. They are separated from ⚪ deliberately — "this is a Microsoft EULA" and "nobody could tell" lead to different work.
+🔒 uses labels that are not SPDX ids, because the licence has a name even though SPDX has no code for it: `Commercial` for paid products and dual-licence agreements, `MS-EULA` for the Microsoft .NET Library terms many older Microsoft packages ship, and `Oracle-FUTC` for Oracle's Free Use Terms. They are kept apart from ⚪ deliberately — "this is a Microsoft EULA" and "nobody could tell" lead to different work.
 
 See [how licences are resolved](how-it-works.md#what-the-console-messages-mean).
 

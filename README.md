@@ -39,6 +39,24 @@ One scan runs six checks over every project in the solution:
 
 Works with modern SDK-style projects, legacy `.NET Framework` (`packages.config`), Central Package Management, and both `.sln` and `.slnx`. The scan is read-only, stays offline by default, and never runs your packages' code.
 
+<details>
+<summary><strong>How is this different from the tools I already use?</strong></summary>
+
+<br>
+
+Each of these does one job, and several do it better than NuGetGuard does — `dotnet-outdated` can apply the updates for you, and `dotnet list package` is built into the SDK with no install at all:
+
+| Tool | Covers |
+|---|---|
+| `dotnet list package --vulnerable/--outdated/--deprecated` | vulnerable · deprecated · outdated |
+| [dotnet-outdated](https://www.nuget.org/packages/dotnet-outdated-tool) | outdated, and can upgrade them |
+| [Snitch](https://www.nuget.org/packages/snitch) | redundant transitive references |
+| [dotnet-project-licenses](https://www.nuget.org/packages/dotnet-project-licenses) | licence listing |
+
+NuGetGuard runs **all six checks in one pass and one report**, adds licence *risk* classification and unused-package detection, and works on legacy `packages.config` projects that `dotnet list package` cannot read at all. If you only need one of the above, use the dedicated tool — it will serve you better.
+
+</details>
+
 📚 **[Documentation](docs/)** — [how it works](docs/how-it-works.md) · [the checks in depth](docs/checks.md) · [troubleshooting](docs/troubleshooting.md) · [architecture](docs/architecture.md)
 
 ---

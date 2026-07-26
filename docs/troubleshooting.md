@@ -35,7 +35,7 @@ Select-String -Path .\**\*.csproj -Pattern "PackageName"
 
 The tool reports what the **project files** declare, so a version that appears there but not in Visual Studio usually means one project was left behind during an upgrade — the Visual Studio package manager shows a consolidated view, while the report lists every project separately. Consolidating the version across the solution removes the finding.
 
-The restored `packages/` folder is *not* a source of packages. It accumulates every version a solution has ever restored, so reading it would report packages that are long gone. Versions before 1.1.0 did read it, and reported exactly that kind of phantom finding.
+The restored `packages/` folder is *not* a source of packages. It accumulates every version a solution has ever restored, so reading it would report packages that are long gone.
 
 ## Two versions of the same package are listed
 
@@ -59,7 +59,15 @@ Running `dotnet restore` first usually resolves it for SDK-style solutions.
 
 ## Licences stay Unknown
 
-The licence could not be verified from metadata, a known-package database, the URL shape, or the text of the licence page. Commercial packages behind redirecting EULA links are the usual case. Unknown is not "probably fine" — it means nothing was confirmed, so check those packages by hand.
+None of the offline steps could identify it: the package declares no SPDX expression, it is not in the built-in database, its licence URL is unrecognisable, and it ships no licence file. Packages from a private feed and commercial ones behind redirecting EULA links are the usual cases.
+
+Try the online lookup, which resolves packages the offline steps cannot:
+
+```bash
+nuget-guard --online-licenses
+```
+
+Whatever is still `Unknown` after that has no published licence data at all. `Unknown` is not "probably fine" — it means nothing was confirmed, so check those packages by hand.
 
 ## The report is not where I expected
 

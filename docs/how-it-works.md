@@ -39,8 +39,8 @@ Only for `packages.config` projects. The restored `packages/` folder is used for
 **`Metadata fetched for N packages`**
 N is the number of distinct package + version pairs across the solution. The same package at two versions counts twice.
 
-**`Resolving N unidentified licenses...`** / **`Resolved M additional licenses from page content`**
-Licences are resolved in five steps, stopping at the first that succeeds. Everything offline comes first, so the network is only used for what is left:
+**`Resolving N unidentified licenses...`** / **`Identified M more, K left unknown`**
+Licences are resolved in six steps, stopping at the first that succeeds. Everything offline comes first, so the network is only used for what is left:
 
 1. `licenseExpression` from the NuGet API — a plain SPDX id such as `MIT`.
 2. A curated database of packages a prefix cannot cover: licences that differ from their family, overrides where the package's own metadata is misleading, and proprietary packages. Entries a same-value prefix already handles were removed, so the database no longer grows for ordinary open-source packages.
@@ -49,7 +49,7 @@ Licences are resolved in five steps, stopping at the first that succeeds. Everyt
 5. **The ClearlyDefined API** — only with `--online-licenses`. It scans package contents and curates the declared licence, resolving packages none of the offline steps could. Off by default, because a scan should stay offline and deterministic; its sentinel values (`NOASSERTION`, `OTHER`, `LicenseRef-*`) are treated as unresolved rather than invented licences.
 6. **Downloading the licence page and matching its text** — one HTTP request per package that still has an unidentified URL.
 
-Both matching steps use the same fingerprints, ordered most specific first: the AGPL preamble before the GPL one, `Apache License, Version 2.0` before a bare mention of Apache.
+The two text-matching steps (4 and 6) share the same fingerprints, ordered most specific first: the AGPL preamble before the GPL one, `Apache License, Version 2.0` before a bare mention of Apache.
 
 `Identified 15 more, 13 left unknown` therefore means 15 packages were classified by these steps and 13 could not be. What remains is normally genuine: commercial EULAs and packages that publish no licence metadata at all. Treat those as a compliance gap to check by hand, not as a safe default — `Unknown` means nothing was verified.
 
