@@ -359,6 +359,7 @@ public static class LicenseCatalog
         // Proprietary — a known licence, just not an open-source one
         ["Commercial"] = LicenseRisk.Proprietary,
         ["MS-EULA"] = LicenseRisk.Proprietary,
+        ["Oracle-FUTC"] = LicenseRisk.Proprietary,
         // Strong copyleft (red)
         ["GPL-2.0"] = LicenseRisk.StrongCopyleft,
         ["GPL-2.0-only"] = LicenseRisk.StrongCopyleft,

@@ -14,6 +14,10 @@ public static class SpdxTextMatcher
     /// </summary>
     private static readonly (string Spdx, string Pattern)[] Patterns =
     [
+        // Proprietary licences first — their text often quotes an open-source one it partially
+        // grants, so an MIT/Apache pattern checked earlier would misread the whole thing as free.
+        ("Commercial", @"DUAL LICENSE AGREEMENT"),
+        ("Oracle-FUTC", @"Oracle Free (Distribution|Use|Licen[cs]e)|Oracle Technology Network Licen[cs]e"),
         // Lesser and Affero come before plain GPL: their pages quote the GPL heavily, so a GPL
         // pattern checked first would misread an LGPL or AGPL licence as strong copyleft.
         ("AGPL-3.0", @"GNU AFFERO GENERAL PUBLIC LICENSE.*Version 3|AGPL.?3\.0"),

@@ -46,6 +46,8 @@ public sealed class LicenseUrlResolver(HttpClient http)
         // Microsoft's own EULA pages. The links are long dead, so naming the licence from the URL
         // is the only way left to tell a proprietary Microsoft licence from an unchecked one.
         ("microsoft.com/web/webpi/eula/", "MS-EULA"),
+        // Commercial vendors whose licence URL points at their own EULA
+        ("devexpress.com", "Commercial"),
     ];
 
     // Ordered from most specific to least specific

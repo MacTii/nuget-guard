@@ -31,6 +31,7 @@ public class LicenseCatalogTests
     [Theory]
     [InlineData("Commercial")]
     [InlineData("MS-EULA")]
+    [InlineData("Oracle-FUTC")]
     public void GetRisk_NamedNonOpenSourceLicences_AreProprietary(string license) =>
         LicenseCatalog.GetRisk(license).ShouldBe(LicenseRisk.Proprietary);
 
