@@ -51,7 +51,6 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
         var builder = new ReportBuilder(nuget);
 
         var metadata = await FetchMetadataWithProgressAsync(builder, allPackages.Values.ToList());
-        ApplyLicenseOverrides(metadata, solution.SolutionFile.DirectoryName!);
         await ResolveLicensesWithProgressAsync(metadata, http, solution.PackagesFolder, settings.OnlineLicenses);
 
         var (vulnerable, skippedProjects) = await ReportBuilder.BuildVulnerableAsync(
@@ -147,28 +146,11 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
         var stillUnknown = unresolvedCount - resolved;
         AnsiConsole.MarkupLine($"[green]✅ Identified {resolved} more, {stillUnknown} left unknown[/]");
 
-        // Anything still unknown has a next step, so say what it is rather than leaving a bare number.
-        if (stillUnknown > 0)
-        {
-            AnsiConsole.MarkupLine(online
-                ? $"[grey]   Nothing published a licence for {(stillUnknown == 1 ? "it" : "them")}. Declare your own in {LicenseOverrides.FileName} — see the docs.[/]"
-                : "[grey]   Try [/][cyan]--online-licenses[/][grey], or declare your own in " + LicenseOverrides.FileName + ".[/]");
-        }
+        // Say what the next step is rather than leaving a bare number.
+        if (stillUnknown > 0 && !online)
+            AnsiConsole.MarkupLine("[grey]   Try [/][cyan]--online-licenses[/][grey] to resolve more.[/]");
 
         AnsiConsole.WriteLine();
-    }
-
-    private static void ApplyLicenseOverrides(List<PackageMetadata> metadata, string solutionDirectory)
-    {
-        var overrides = LicenseOverrides.Load(solutionDirectory);
-        if (overrides.Count == 0)
-            return;
-
-        var applied = LicenseOverrides.Apply(metadata, overrides);
-
-        AnsiConsole.MarkupLine(applied > 0
-            ? $"[green]✅ Applied {applied} licence {(applied == 1 ? "override" : "overrides")} from {LicenseOverrides.FileName}[/]\n"
-            : $"[yellow]⚠️  {LicenseOverrides.FileName} matched no packages — check the ids in it.[/]\n");
     }
 
     private static async Task<List<RedundantProjectGroup>> AnalyzeRedundantWithProgressAsync(

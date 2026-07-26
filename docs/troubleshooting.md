@@ -67,19 +67,9 @@ Try the online lookup, which resolves packages the offline steps cannot:
 nuget-guard --online-licenses
 ```
 
-Whatever is still `Unknown` after that has no published licence data anywhere — typically packages from a private feed, or old ones that never declared a licence. No public source can classify them, so declare them yourself in `nuget-guard.licenses.json` next to the solution:
+Whatever is still `Unknown` after that has no published licence data anywhere — typically a package from a private feed, or an old one that never declared a licence. The report names them, so check those few by hand: read the licence file in the package, or ask whoever publishes it.
 
-```json
-{
-  "Acme.Internal.Common": "Proprietary",
-  "Acme.Shared.Utils": "MIT",
-  "RtfPipe": "MIT"
-}
-```
-
-It is picked up automatically — no option to pass. Ids are case-insensitive, and an entry wins over every other source, including the package's own metadata, so it also fixes a package whose feed reports the wrong licence. Commit the file and the whole team gets the same result.
-
-`Unknown` is not "probably fine" — it means nothing was confirmed, so check those packages by hand before declaring them.
+`Unknown` is not "probably fine" — it means nothing was confirmed. The tool leaves it that way on purpose rather than guessing, because a wrong licence in a compliance report is worse than an unanswered one.
 
 ## The report is not where I expected
 
