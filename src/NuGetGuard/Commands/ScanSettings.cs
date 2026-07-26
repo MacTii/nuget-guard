@@ -34,10 +34,6 @@ public sealed class ScanSettings : CommandSettings
     [Description("Query the ClearlyDefined API for licences the offline steps could not identify. Slower and needs network, but resolves packages not in the built-in database.")]
     public bool OnlineLicenses { get; init; }
 
-    [CommandOption("--license-map")]
-    [Description("JSON file of package id → licence, for packages no public source can identify (internal or private-feed ones). Defaults to nuget-guard.licenses.json next to the solution.")]
-    public string? LicenseMap { get; init; }
-
     [CommandOption("--no-open")]
     [Description("Do not open the HTML report in the browser after export.")]
     public bool NoOpen { get; init; }

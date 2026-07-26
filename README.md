@@ -112,7 +112,6 @@ nuget-guard --fail-on vulnerable             # CI: non-zero exit on findings
 | `--skip-redundant` | `false` | Skip redundancy analysis |
 | `--skip-unused` | `false` | Skip unused-package analysis |
 | `--online-licenses` | `false` | Resolve leftover unknown licenses via the ClearlyDefined API (slower, needs network) |
-| `--license-map` | auto | JSON file of package id → licence, for internal packages no public source knows. Defaults to `nuget-guard.licenses.json` beside the solution |
 | `--no-open` | `false` | Don't open the HTML report |
 
 **Exit codes**

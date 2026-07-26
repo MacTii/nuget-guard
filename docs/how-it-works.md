@@ -42,7 +42,7 @@ N is the number of distinct package + version pairs across the solution. The sam
 **`Resolving N unidentified licenses...`** / **`Identified M more, K left unknown`**
 Licences are resolved in six steps, stopping at the first that succeeds. Everything offline comes first, so the network is only used for what is left:
 
-0. **Your own declarations** — `nuget-guard.licenses.json` beside the solution, or `--license-map <path>`. Applied before anything else, because no public source can identify a package from a private feed, and the team using it knows best. See [troubleshooting](troubleshooting.md#licences-stay-unknown).
+0. **Your own declarations** — `nuget-guard.licenses.json` beside the solution, when present. Applied before anything else, because no public source can identify a package from a private feed, and the team using it knows best. See [troubleshooting](troubleshooting.md#licences-stay-unknown).
 1. `licenseExpression` from the NuGet API — a plain SPDX id such as `MIT`.
 2. A curated database of packages a prefix cannot cover: licences that differ from their family, overrides where the package's own metadata is misleading, and proprietary packages. Entries a same-value prefix already handles were removed, so the database no longer grows for ordinary open-source packages.
 3. The shape of `licenseUrl` — `opensource.org/licenses/MIT` and similar URLs identify the licence on their own, without a request.

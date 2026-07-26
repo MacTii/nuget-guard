@@ -44,7 +44,6 @@ The scan is read-only and stays offline by default. Package assemblies are read 
 | `--skip-redundant` | `false` | Skip redundancy analysis |
 | `--skip-unused` | `false` | Skip unused-package analysis |
 | `--online-licenses` | `false` | Resolve leftover unknown licences via the ClearlyDefined API |
-| `--license-map` | auto | JSON file of package id → licence, for internal packages. Defaults to `nuget-guard.licenses.json` beside the solution |
 | `--no-open` | `false` | Don't open the HTML report |
 
 Exit codes: `0` clean · `1` a `--fail-on` condition triggered · `2` no solution found.

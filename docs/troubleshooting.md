@@ -77,7 +77,7 @@ Whatever is still `Unknown` after that has no published licence data anywhere �
 }
 ```
 
-It is picked up automatically; use `--license-map <path>` for a file kept elsewhere. Ids are case-insensitive, and an entry wins over every other source — including the package's own metadata, so it also fixes a package whose feed reports the wrong licence. Commit the file and the whole team gets the same result.
+It is picked up automatically — no option to pass. Ids are case-insensitive, and an entry wins over every other source, including the package's own metadata, so it also fixes a package whose feed reports the wrong licence. Commit the file and the whole team gets the same result.
 
 `Unknown` is not "probably fine" — it means nothing was confirmed, so check those packages by hand before declaring them.
 

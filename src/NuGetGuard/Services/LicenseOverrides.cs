@@ -12,8 +12,8 @@ namespace NuGetGuard.Services;
 /// </summary>
 public static class LicenseOverrides
 {
-    /// <summary>File picked up automatically when it sits next to the solution.</summary>
-    public const string ConventionalFileName = "nuget-guard.licenses.json";
+    /// <summary>The file, picked up automatically when it sits next to the solution.</summary>
+    public const string FileName = "nuget-guard.licenses.json";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -22,24 +22,16 @@ public static class LicenseOverrides
         AllowTrailingCommas = true,
     };
 
-    /// <summary>The override file to use: the explicit one, else the conventional one beside the solution.</summary>
-    public static string? Locate(string? explicitPath, string solutionDirectory)
-    {
-        if (!string.IsNullOrWhiteSpace(explicitPath))
-            return explicitPath;
-
-        var conventional = Path.Combine(solutionDirectory, ConventionalFileName);
-        return File.Exists(conventional) ? conventional : null;
-    }
-
     /// <summary>
-    /// Package id → licence. Returns empty when the file is missing or unreadable; a broken
-    /// override file must not abort a scan, and the packages simply stay as they were.
+    /// Package id → licence, read from the file beside the solution. Returns empty when it is
+    /// absent or unreadable: a broken override file must not abort a scan, and the packages
+    /// simply stay as they were.
     /// </summary>
-    public static IReadOnlyDictionary<string, string> Load(string? path)
+    public static IReadOnlyDictionary<string, string> Load(string solutionDirectory)
     {
         var empty = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+        var path = Path.Combine(solutionDirectory, FileName);
+        if (!File.Exists(path))
             return empty;
 
         try
