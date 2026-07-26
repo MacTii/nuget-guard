@@ -16,17 +16,20 @@
     <PackageId>NuGetGuard</PackageId>
     <Version>1.0.0</Version>
     <Authors>MacTii</Authors>
-    <Description>Audits NuGet packages in .NET solutions — finds vulnerable, deprecated, outdated and redundant dependencies, and classifies license risk. Exports HTML/CSV reports.</Description>
+    <Description>Audits NuGet packages in .NET solutions in one command: vulnerabilities, deprecations, outdated versions, license risk, and redundant or unused references. Works with SDK-style and legacy packages.config projects. Exports HTML and CSV reports.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/MacTii/nuget-guard</PackageProjectUrl>
     <RepositoryUrl>https://github.com/MacTii/nuget-guard</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>nuget;audit;security;vulnerabilities;licenses;deprecated;outdated;dotnet-tool;cli</PackageTags>
+    <PackageTags>nuget;audit;security;vulnerabilities;licenses;deprecated;outdated;unused;dotnet-tool;cli</PackageTags>
+    <!-- A dedicated readme: the GitHub one relies on relative links, images and raw HTML that nuget.org cannot render -->
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\NUGET.md" Pack="true" PackagePath="\README.md" />
+    <None Include="..\..\icon.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup>
