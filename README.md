@@ -30,12 +30,12 @@ One scan runs six checks over every project in the solution:
 
 | Check | What you get |
 |---|---|
-| 🚨&nbsp;**Vulnerable** | Known CVEs, by severity, each linked to its advisory |
-| ⚠️&nbsp;**Deprecated** | Deprecated packages and the replacement the author recommends |
-| 📦&nbsp;**Outdated** | The latest version for everything you're behind on |
-| 📜&nbsp;**Licenses** | A licence per package: 🟢&nbsp;permissive · 🟡&nbsp;weak · 🔴&nbsp;strong copyleft · 🔒&nbsp;proprietary · ⚪&nbsp;unknown |
-| 🔗&nbsp;**Redundant** | References already pulled in elsewhere — and whether removing one changes the resolved version |
-| 🧹&nbsp;**Unused** | Packages whose namespaces appear nowhere in your code |
+| **Vulnerable** | 🚨 Known CVEs, by severity, each linked to its advisory |
+| **Deprecated** | ⚠️ Deprecated packages and the replacement the author recommends |
+| **Outdated** | 📦 The latest version for everything you're behind on |
+| **Licenses** | 📜 A licence per package: 🟢 permissive · 🟡 weak · 🔴 strong copyleft · 🔒 proprietary · ⚪ unknown |
+| **Redundant** | 🔗 References already pulled in elsewhere — and whether removing one changes the resolved version |
+| **Unused** | 🧹 Packages whose namespaces appear nowhere in your code |
 
 Works with modern SDK-style projects, legacy `.NET Framework` (`packages.config`), Central Package Management, and both `.sln` and `.slnx`. The scan is read-only, stays offline by default, and never runs your packages' code.
 
