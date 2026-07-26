@@ -61,11 +61,13 @@ Running `dotnet restore` first usually resolves it for SDK-style solutions.
 
 None of the offline steps could identify it: the package declares no SPDX expression, it is not in the built-in database, its licence URL is unrecognisable, and it ships no licence file. Packages from a private feed and commercial ones behind redirecting EULA links are the usual cases.
 
-Try the online lookup, which resolves packages the offline steps cannot:
+Try the online lookup, which curates licence data from package contents and occasionally identifies one the offline steps cannot:
 
 ```bash
 nuget-guard --online-licenses
 ```
+
+Expect a modest return. The offline steps already resolve almost everything, so this mainly helps old packages that ship no licence file — the case where the offline text matching has nothing to read.
 
 Whatever is still `Unknown` after that has no published licence data anywhere — typically a package from a private feed, or an old one that never declared a licence. The report names them, so check those few by hand: read the licence file in the package, or ask whoever publishes it.
 

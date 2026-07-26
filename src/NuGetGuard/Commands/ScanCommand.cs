@@ -146,9 +146,11 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
         var stillUnknown = unresolvedCount - resolved;
         AnsiConsole.MarkupLine($"[green]✅ Identified {resolved} more, {stillUnknown} left unknown[/]");
 
-        // Say what the next step is rather than leaving a bare number.
+        // Say what the next step is rather than leaving a bare number. "May" is
+        // deliberate: most leftovers are packages with no published licence at all,
+        // which no lookup can resolve.
         if (stillUnknown > 0 && !online)
-            AnsiConsole.MarkupLine("[grey]   Try [/][cyan]--online-licenses[/][grey] to resolve more.[/]");
+            AnsiConsole.MarkupLine("[grey]   [/][cyan]--online-licenses[/][grey] may resolve some of these.[/]");
 
         AnsiConsole.WriteLine();
     }
