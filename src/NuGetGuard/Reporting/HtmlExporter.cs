@@ -100,10 +100,13 @@ public static class HtmlExporter
             h1{font-size:1.7rem;margin-bottom:.25rem}
             h2{font-size:1.2rem;margin:2rem 0 .75rem;color:#2c3e50}
             .sub{color:#888;margin-bottom:1.5rem}
-            .summary{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem}
-            .card{background:#fff;border-radius:10px;padding:1rem 1.5rem;box-shadow:0 1px 4px rgba(0,0,0,.08);flex:1;min-width:140px;text-align:center}
-            .num{font-size:2.2rem;font-weight:700}
-            .lbl{font-size:.8rem;color:#888;margin-top:.25rem}
+            .summary{display:flex;gap:1.25rem;flex-wrap:wrap;margin-bottom:1.75rem}
+            .group{background:#fff;border-radius:12px;padding:.9rem 1.1rem 1rem;box-shadow:0 1px 4px rgba(0,0,0,.08);flex:1;min-width:280px}
+            .group-lbl{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:#95a5a6;font-weight:700;margin-bottom:.7rem}
+            .cards{display:flex;gap:.5rem}
+            .card{flex:1;text-align:center;padding:.2rem}
+            .num{font-size:1.9rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
+            .lbl{font-size:.72rem;color:#888;margin-top:.2rem}
             .build-error{background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;color:#7a5f00;font-size:.88rem}
             table{width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:2rem}
             th{background:#2c3e50;color:#fff;padding:.75rem 1rem;text-align:left;font-size:.8rem;text-transform:uppercase}
@@ -125,14 +128,29 @@ public static class HtmlExporter
             <p class="sub">Solution: <strong>{{Encode(report.SolutionName)}}</strong> &nbsp;|&nbsp; Generated: {{generatedAt}}</p>
 
             <div class="summary">
+            <div class="group">
+            <div class="group-lbl">🚨 Issues</div>
+            <div class="cards">
             <div class="card"><div class="num" style="color:#e74c3c">{{report.Vulnerable.Count}}</div><div class="lbl">Vulnerable</div></div>
             <div class="card"><div class="num" style="color:#e67e22">{{report.Deprecated.Count}}</div><div class="lbl">Deprecated</div></div>
             <div class="card"><div class="num" style="color:#3498db">{{outdatedNum}}</div><div class="lbl">Outdated</div></div>
+            </div>
+            </div>
+            <div class="group">
+            <div class="group-lbl">📜 Licenses</div>
+            <div class="cards">
             <div class="card"><div class="num" style="color:#e74c3c">{{report.StrongCopyleftCount}}</div><div class="lbl">Strong Copyleft</div></div>
             <div class="card"><div class="num" style="color:#8e44ad">{{report.ProprietaryLicenseCount}}</div><div class="lbl">Proprietary</div></div>
-            <div class="card"><div class="num" style="color:#aaa">{{report.UnknownLicenseCount}}</div><div class="lbl">Unknown License</div></div>
+            <div class="card"><div class="num" style="color:#aaa">{{report.UnknownLicenseCount}}</div><div class="lbl">Unknown</div></div>
+            </div>
+            </div>
+            <div class="group">
+            <div class="group-lbl">🧹 Hygiene</div>
+            <div class="cards">
             <div class="card"><div class="num" style="color:#9b59b6">{{report.RedundantCount}}</div><div class="lbl">Redundant</div></div>
             <div class="card"><div class="num" style="color:#16a085">{{report.UnusedCount}}</div><div class="lbl">Possibly Unused</div></div>
+            </div>
+            </div>
             </div>
 
             {{outdatedNote}}

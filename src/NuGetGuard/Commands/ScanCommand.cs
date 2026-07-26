@@ -34,7 +34,11 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
         if (others > 0)
         {
             AnsiConsole.MarkupLine(
-                $"[yellow]⚠️  {others} more {(others == 1 ? "solution" : "solutions")} found here and not scanned — point the path at one to scan it.[/]");
+                $"[yellow]⚠️  {others} more {(others == 1 ? "solution" : "solutions")} found here and not scanned — pass one of these paths to scan it:[/]");
+
+            var cwd = Directory.GetCurrentDirectory();
+            foreach (var other in solution.OtherSolutions)
+                AnsiConsole.MarkupLine($"[grey]     {Markup.Escape(RelativeOrFull(cwd, other.FullName))}[/]");
         }
 
         AnsiConsole.WriteLine();
@@ -77,6 +81,13 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
         ReportExporter.Export(report, settings.Export, settings.OutputFile, openHtml: !settings.NoOpen);
 
         return ExitCodeResolver.Resolve(report, settings.FailOn);
+    }
+
+    /// <summary>Path relative to the working directory when it is inside it, otherwise the full path.</summary>
+    private static string RelativeOrFull(string root, string fullPath)
+    {
+        var relative = Path.GetRelativePath(root, fullPath);
+        return relative.StartsWith("..", StringComparison.Ordinal) ? fullPath : relative;
     }
 
     private static async Task RestoreLegacyProjectsAsync(SolutionContext solution)
