@@ -113,6 +113,7 @@ nuget-guard --fail-on vulnerable             # CI: non-zero exit on findings
 | `--skip-unused` | `false` | Skip unused-package analysis |
 | `--online-licenses` | `false` | Resolve leftover unknown licenses via the ClearlyDefined API (slower, needs network) |
 | `--no-open` | `false` | Don't open the HTML report |
+| `-v, --version` | | Print the version and exit |
 
 **Exit codes**
 
@@ -121,6 +122,9 @@ nuget-guard --fail-on vulnerable             # CI: non-zero exit on findings
 | `0` | Clean, or no `--fail-on` match |
 | `1` | `--fail-on` condition triggered |
 | `2` | No solution found |
+| `-1` | Invalid usage — an unknown or mistyped option |
+
+A mistyped option is an error, never a silent no-op: `--fail-on-vulnerable` (hyphen instead of a space) stops the run rather than scanning without the condition and reporting success.
 
 `--fail-on Any` covers vulnerable, deprecated, outdated and strong-copyleft findings. Unused packages are excluded — that check is heuristic, so request it explicitly with `--fail-on Unused`.
 

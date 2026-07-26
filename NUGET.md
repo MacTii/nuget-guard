@@ -45,8 +45,11 @@ The scan is read-only and stays offline by default. Package assemblies are read 
 | `--skip-unused` | `false` | Skip unused-package analysis |
 | `--online-licenses` | `false` | Resolve leftover unknown licences via the ClearlyDefined API |
 | `--no-open` | `false` | Don't open the HTML report |
+| `-v, --version` | | Print the version and exit |
 
-Exit codes: `0` clean · `1` a `--fail-on` condition triggered · `2` no solution found.
+Exit codes: `0` clean · `1` a `--fail-on` condition triggered · `2` no solution found · `-1` invalid usage.
+
+A mistyped option is an error rather than a silent no-op, so a typo in a pipeline fails the job instead of reporting a clean scan.
 
 ## Documentation
 
