@@ -15,9 +15,9 @@ Find vulnerable, deprecated and outdated packages, spot risky or proprietary lic
 
 </div>
 
-<!-- After publishing to nuget.org, replace the static nuget.org badge above with the live ones:
-     ![NuGet](https://img.shields.io/nuget/v/NuGetGuard?logo=nuget)
-     ![Downloads](https://img.shields.io/nuget/dt/NuGetGuard?logo=nuget)
+<!-- After publishing to nuget.org, replace the static nuget.org badge above with the live
+     ones below — keeping them on the same single line as the rest:
+     ![NuGet](https://img.shields.io/nuget/v/NuGetGuard?logo=nuget) ![Downloads](https://img.shields.io/nuget/dt/NuGetGuard?logo=nuget)
      They render "package not found" until the package actually exists. -->
 
 ---
