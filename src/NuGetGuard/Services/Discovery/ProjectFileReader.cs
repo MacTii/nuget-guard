@@ -1,6 +1,6 @@
 using System.Xml.Linq;
 
-namespace NuGetGuard.Services;
+namespace NuGetGuard.Services.Discovery;
 
 /// <summary>Reads MSBuild project files: package references, project type and project references.</summary>
 public static class ProjectFileReader

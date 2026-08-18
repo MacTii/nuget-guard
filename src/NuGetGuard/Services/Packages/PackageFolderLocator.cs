@@ -1,4 +1,4 @@
-namespace NuGetGuard.Services;
+namespace NuGetGuard.Services.Packages;
 
 /// <summary>Locates a restored package on disk, in the global cache or in a legacy packages folder.</summary>
 public static class PackageFolderLocator

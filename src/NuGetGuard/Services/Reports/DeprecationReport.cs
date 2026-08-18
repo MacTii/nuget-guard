@@ -1,6 +1,6 @@
 using NuGetGuard.Models;
 
-namespace NuGetGuard.Services;
+namespace NuGetGuard.Services.Reports;
 
 /// <summary>Deprecated packages and the replacement their author recommends.</summary>
 public static class DeprecationReport

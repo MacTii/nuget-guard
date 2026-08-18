@@ -1,6 +1,6 @@
 using NuGetGuard.Models;
 
-namespace NuGetGuard.Services;
+namespace NuGetGuard.Services.Discovery;
 
 /// <summary>Aggregates direct package references from all projects into a solution-wide bag.</summary>
 public static class PackageCollector

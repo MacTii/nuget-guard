@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
 
-namespace NuGetGuard.Services.ClearlyDefined;
+namespace NuGetGuard.Services.Licensing.ClearlyDefined;
 
 /// <summary>
 /// Resolves a licence from the ClearlyDefined API — an open service that scans package contents

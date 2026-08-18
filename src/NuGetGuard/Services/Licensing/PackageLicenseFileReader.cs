@@ -1,6 +1,7 @@
 using System.Xml.Linq;
+using NuGetGuard.Services.Packages;
 
-namespace NuGetGuard.Services;
+namespace NuGetGuard.Services.Licensing;
 
 /// <summary>
 /// Reads the licence file a package ships and identifies it.

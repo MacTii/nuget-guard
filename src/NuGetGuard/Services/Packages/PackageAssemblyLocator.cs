@@ -1,4 +1,4 @@
-namespace NuGetGuard.Services;
+namespace NuGetGuard.Services.Packages;
 
 /// <summary>Finds the assemblies shipped by an installed package, in the global or the legacy packages folder.</summary>
 public static class PackageAssemblyLocator

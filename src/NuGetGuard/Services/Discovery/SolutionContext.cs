@@ -1,4 +1,4 @@
-namespace NuGetGuard.Services;
+namespace NuGetGuard.Services.Discovery;
 
 /// <summary>The discovered solution file and its projects.</summary>
 public sealed record SolutionContext(FileInfo SolutionFile, IReadOnlyList<FileInfo> ProjectFiles)

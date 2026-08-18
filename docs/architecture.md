@@ -14,8 +14,15 @@ Commands  ->  Reporting  ->  Services  ->  Models
 | Folder | Holds | Rule |
 |---|---|---|
 | `Commands/` | `ScanCommand`, `ScanSettings`, `FailOn`, `ExitCodeResolver` | Spectre.Console.Cli lives here and nowhere else |
-| `Services/` | scanning, NuGet API, licences, redundancy, unused | no console output — progress is reported through callbacks |
+| `Services/` | the scan itself, split one folder per concern | no console output — progress is reported through callbacks |
+| `Services/Discovery/` | finding the solution, reading its projects and declared packages | depends on nothing else in `Services/` |
+| `Services/Packages/` | reading restored packages from disk: folders, assemblies, `.nuspec` | nothing is executed — assemblies are read as metadata only |
+| `Services/Licensing/` | identifying a licence and classifying its risk | the licence file of the scanned version outranks the id-keyed database |
+| `Services/Analysis/` | redundancy and unused-package detection | the two slowest checks, both skippable |
+| `Services/Reports/` | building the vulnerable, deprecated and outdated sections | one class per section, so a check has one place to change |
 | `Services/DotNet/`, `Services/NuGetApi/` | external integrations and their JSON models | DTOs are `internal`, so API shapes never leak |
+
+The folders under `Services/` form a directed graph with no cycles: `Discovery` and `DotNet` depend on nothing, `Packages` builds on them, `Licensing` on `Packages`, and `Analysis` and `Reports` sit on top.
 | `Reporting/` | `ConsoleReporter`, `HtmlExporter`, `CsvExporter` | reads the report, never computes it |
 | `Models/` | the report model, one type per file | plain data plus `Rankings` for ordering |
 

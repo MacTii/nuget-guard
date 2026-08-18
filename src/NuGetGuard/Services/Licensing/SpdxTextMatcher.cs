@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace NuGetGuard.Services;
+namespace NuGetGuard.Services.Licensing;
 
 /// <summary>
 /// Identifies a licence from its text. Shared by the licence-page fetcher and the reader of

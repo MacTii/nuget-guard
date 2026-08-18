@@ -1,5 +1,5 @@
 using System.Reflection;
-using NuGetGuard.Services.ClearlyDefined;
+using NuGetGuard.Services.Licensing.ClearlyDefined;
 
 namespace NuGetGuard.Tests;
 

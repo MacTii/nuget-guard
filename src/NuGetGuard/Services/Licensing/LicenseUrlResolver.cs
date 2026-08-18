@@ -1,4 +1,4 @@
-namespace NuGetGuard.Services;
+namespace NuGetGuard.Services.Licensing;
 
 /// <summary>Resolves an SPDX license identifier from a licenseUrl — by URL pattern first, then by fetching page content.</summary>
 public sealed class LicenseUrlResolver(HttpClient http)

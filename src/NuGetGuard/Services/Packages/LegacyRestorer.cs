@@ -1,6 +1,7 @@
+using NuGetGuard.Services.Discovery;
 using NuGetGuard.Services.DotNet;
 
-namespace NuGetGuard.Services;
+namespace NuGetGuard.Services.Packages;
 
 /// <summary>
 /// Restores legacy packages.config projects via nuget.exe so that the packages/ folder

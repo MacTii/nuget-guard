@@ -1,8 +1,10 @@
 using NuGet.Versioning;
 using NuGetGuard.Models;
+using NuGetGuard.Services.Discovery;
 using NuGetGuard.Services.NuGetApi;
+using NuGetGuard.Services.Packages;
 
-namespace NuGetGuard.Services;
+namespace NuGetGuard.Services.Analysis;
 
 /// <summary>
 /// Snitch-like analysis: finds direct package references that are already covered

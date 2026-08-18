@@ -1,3 +1,4 @@
+using NuGetGuard.Services.Licensing;
 using NuGetGuard.Services;
 
 namespace NuGetGuard.Tests;

@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
-namespace NuGetGuard.Services;
+namespace NuGetGuard.Services.Discovery;
 
 /// <summary>
 /// Reads the projects a solution actually contains, so that scanning a folder holding several

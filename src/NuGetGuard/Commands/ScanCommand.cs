@@ -1,10 +1,15 @@
 using NuGetGuard.Models;
 using NuGetGuard.Reporting;
-using NuGetGuard.Services;
-using NuGetGuard.Services.ClearlyDefined;
+using NuGetGuard.Services.Analysis;
+using NuGetGuard.Services.Discovery;
+using NuGetGuard.Services.Licensing.ClearlyDefined;
+using NuGetGuard.Services.Licensing;
 using NuGetGuard.Services.NuGetApi;
-using Spectre.Console;
+using NuGetGuard.Services.Packages;
+using NuGetGuard.Services.Reports;
+using NuGetGuard.Services;
 using Spectre.Console.Cli;
+using Spectre.Console;
 
 namespace NuGetGuard.Commands;
 

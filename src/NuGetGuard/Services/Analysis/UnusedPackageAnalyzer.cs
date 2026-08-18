@@ -1,6 +1,8 @@
 using NuGetGuard.Models;
+using NuGetGuard.Services.Discovery;
+using NuGetGuard.Services.Packages;
 
-namespace NuGetGuard.Services;
+namespace NuGetGuard.Services.Analysis;
 
 /// <summary>
 /// Finds direct package references whose namespaces never appear in the project's source.

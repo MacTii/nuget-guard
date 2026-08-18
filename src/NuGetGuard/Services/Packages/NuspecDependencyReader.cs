@@ -1,6 +1,7 @@
 using System.Xml.Linq;
+using NuGetGuard.Models;
 
-namespace NuGetGuard.Services;
+namespace NuGetGuard.Services.Packages;
 
 /// <summary>Reads dependencies from the .nuspec of a package restored into the legacy packages/ folder.</summary>
 public static class NuspecDependencyReader

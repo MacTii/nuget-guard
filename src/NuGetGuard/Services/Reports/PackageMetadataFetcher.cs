@@ -1,7 +1,7 @@
 using NuGetGuard.Models;
 using NuGetGuard.Services.NuGetApi;
 
-namespace NuGetGuard.Services;
+namespace NuGetGuard.Services.Reports;
 
 /// <summary>Fetches NuGet metadata for the collected packages, in parallel.</summary>
 public sealed class PackageMetadataFetcher(NuGetClient nuget)

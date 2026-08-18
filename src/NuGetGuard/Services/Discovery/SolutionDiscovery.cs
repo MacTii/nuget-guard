@@ -1,4 +1,4 @@
-namespace NuGetGuard.Services;
+namespace NuGetGuard.Services.Discovery;
 
 /// <summary>Finds the solution file and the projects belonging to it.</summary>
 public static class SolutionDiscovery

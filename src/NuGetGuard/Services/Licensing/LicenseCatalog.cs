@@ -1,6 +1,6 @@
 using NuGetGuard.Models;
 
-namespace NuGetGuard.Services;
+namespace NuGetGuard.Services.Licensing;
 
 /// <summary>
 /// Static knowledge base for packages that ship no <c>licenseExpression</c>: license risk

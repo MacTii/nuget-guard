@@ -253,7 +253,12 @@ nuget-guard/
 ├── NuGetGuard.slnx
 ├── src/NuGetGuard/            # tool source
 │   ├── Commands/              # CLI layer (Spectre.Console.Cli)
-│   ├── Services/              # scanning, licenses, redundancy, unused detection
+│   ├── Services/              # one folder per concern, no cycles between them
+│   │   ├── Discovery/         # find the solution, read its projects and packages
+│   │   ├── Packages/          # read restored packages from disk
+│   │   ├── Licensing/         # identify a licence, classify its risk
+│   │   ├── Analysis/          # redundant and unused detection
+│   │   ├── Reports/           # build the vulnerable/deprecated/outdated sections
 │   │   ├── DotNet/            # dotnet / nuget.exe integration + JSON models
 │   │   └── NuGetApi/          # NuGet registration API client + models
 │   ├── Reporting/             # console / CSV / HTML output

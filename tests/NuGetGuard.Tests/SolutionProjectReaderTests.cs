@@ -1,3 +1,4 @@
+using NuGetGuard.Services.Discovery;
 using NuGetGuard.Services;
 
 namespace NuGetGuard.Tests;

@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text;
 using NuGetGuard.Models;
-using NuGetGuard.Services;
+using NuGetGuard.Services.Licensing;
 
 namespace NuGetGuard.Reporting;
 

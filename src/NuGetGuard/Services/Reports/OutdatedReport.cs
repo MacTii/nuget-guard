@@ -1,10 +1,11 @@
 using NuGet.Versioning;
 using NuGetGuard.Models;
-using NuGetGuard.Services.DotNet;
+using NuGetGuard.Services.Discovery;
 using NuGetGuard.Services.DotNet.Models;
+using NuGetGuard.Services.DotNet;
 using NuGetGuard.Services.NuGetApi;
 
-namespace NuGetGuard.Services;
+namespace NuGetGuard.Services.Reports;
 
 /// <summary>
 /// Packages behind their latest stable version. <c>dotnet list</c> covers SDK-style projects;

@@ -1,7 +1,7 @@
 using NuGetGuard.Models;
-using NuGetGuard.Services.ClearlyDefined;
+using NuGetGuard.Services.Licensing.ClearlyDefined;
 
-namespace NuGetGuard.Services;
+namespace NuGetGuard.Services.Licensing;
 
 /// <summary>
 /// Second pass for licences the NuGet API did not identify, and the licence section of the report.

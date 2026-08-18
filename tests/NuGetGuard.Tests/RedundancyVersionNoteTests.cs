@@ -1,6 +1,7 @@
-using System.Reflection;
 using NuGet.Versioning;
+using NuGetGuard.Services.Analysis;
 using NuGetGuard.Services;
+using System.Reflection;
 
 namespace NuGetGuard.Tests;
 

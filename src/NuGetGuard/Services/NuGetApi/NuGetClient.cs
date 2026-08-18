@@ -1,9 +1,10 @@
-using System.Collections.Concurrent;
-using System.Text.Json;
 using NuGet.Versioning;
 using NuGetGuard.Models;
-using NuGetGuard.Services;
+using NuGetGuard.Services.Licensing;
 using NuGetGuard.Services.NuGetApi.Models;
+using NuGetGuard.Services;
+using System.Collections.Concurrent;
+using System.Text.Json;
 
 namespace NuGetGuard.Services.NuGetApi;
 

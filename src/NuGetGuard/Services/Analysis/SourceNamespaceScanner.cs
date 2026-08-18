@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace NuGetGuard.Services;
+namespace NuGetGuard.Services.Analysis;
 
 /// <summary>
 /// Collects every namespace-shaped token that appears in a project's source files.

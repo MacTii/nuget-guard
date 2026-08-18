@@ -2,7 +2,7 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 
-namespace NuGetGuard.Services;
+namespace NuGetGuard.Services.Packages;
 
 /// <summary>
 /// Reads the namespaces a package exposes, straight from assembly metadata.

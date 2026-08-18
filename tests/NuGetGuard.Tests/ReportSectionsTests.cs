@@ -1,4 +1,6 @@
 using NuGetGuard.Models;
+using NuGetGuard.Services.Licensing;
+using NuGetGuard.Services.Reports;
 using NuGetGuard.Services;
 
 namespace NuGetGuard.Tests;

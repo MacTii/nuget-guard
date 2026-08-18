@@ -1,4 +1,4 @@
-namespace NuGetGuard.Services;
+namespace NuGetGuard.Services.Packages;
 
 public enum LegacyRestoreOutcome
 {

@@ -1,5 +1,7 @@
 using NuGetGuard.Models;
 using NuGetGuard.Services;
+using NuGetGuard.Services.Analysis;
+using NuGetGuard.Services.Discovery;
 
 namespace NuGetGuard.Tests;
 
