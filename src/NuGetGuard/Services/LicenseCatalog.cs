@@ -255,9 +255,6 @@ public static class LicenseCatalog
         ["nito.asyncex.coordination"] = "MIT",
         ["nito.asyncex.tasks"] = "MIT",
         ["scrutor"] = "MIT",
-        ["ardalis.result"] = "MIT",
-        ["ardalis.smartenum"] = "MIT",
-        ["ardalis.specification"] = "MIT",
         ["coverlet.collector"] = "MIT",
         ["microsoft.codecoverage"] = "MIT",
         ["opentelemetry"] = "Apache-2.0",
@@ -290,6 +287,9 @@ public static class LicenseCatalog
     // Ordered: first matching prefix wins (covers Microsoft.AspNetCore.*, Azure.*, etc.)
     private static readonly (string Prefix, string License)[] PrefixMap =
     [
+        // Every Ardalis.* package that declares a licence declares MIT; the few that declare
+        // nothing are companion packages of those, so the prefix covers them too.
+        ("ardalis.", "MIT"),
         ("microsoft.aspnetcore.", "MIT"),
         ("microsoft.aspnet.", "Apache-2.0"),
         ("microsoft.extensions.", "MIT"),

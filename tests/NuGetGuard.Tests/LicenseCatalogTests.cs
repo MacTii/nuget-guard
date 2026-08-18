@@ -100,6 +100,16 @@ public class LicenseCatalogTests
         LicenseCatalog.GetKnownLicense("Microsoft.AspNetCore.Http").ShouldBe("MIT");
     }
 
+    // Older Ardalis packages ship no licence metadata and no licence file at all, so nothing
+    // but the catalogue can classify them.
+    [Theory]
+    [InlineData("Ardalis.GuardClauses")]
+    [InlineData("Ardalis.SharedKernel")]
+    [InlineData("Ardalis.ApiEndpoints.NSwag")]
+    [InlineData("Ardalis.Specification.EntityFrameworkCore")]
+    public void GetKnownLicense_ArdalisFamily_ReturnsMit(string packageId) =>
+        LicenseCatalog.GetKnownLicense(packageId).ShouldBe("MIT");
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]
