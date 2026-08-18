@@ -15,11 +15,7 @@ public static class CsvExporter
             .Concat(UnusedRows(report))
             .ToList();
 
-        var sorted = flat
-            .OrderBy(r => Rankings.CategoryOrder(r.Category))
-            .ThenBy(r => Rankings.MaxSeverityForPackage(flat, r.Category, r.Package))
-            .ThenBy(r => r.Package, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(r => Rankings.SeverityOrder(r.Severity));
+        var sorted = Rankings.ForReport(flat);
 
         var issuesPath = $"{outputFile}.csv";
         var issues = new StringBuilder();

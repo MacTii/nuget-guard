@@ -48,15 +48,15 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
 
         var http = SharedHttpClient.Instance;
         var nuget = new NuGetClient(http);
-        var builder = new ReportBuilder(nuget);
+        var fetcher = new PackageMetadataFetcher(nuget);
 
-        var metadata = await FetchMetadataWithProgressAsync(builder, allPackages.Values.ToList());
+        var metadata = await FetchMetadataWithProgressAsync(fetcher, allPackages.Values.ToList());
         await ResolveLicensesWithProgressAsync(metadata, http, solution.PackagesFolder, settings.OnlineLicenses);
 
-        var (vulnerable, skippedProjects) = await ReportBuilder.BuildVulnerableAsync(
+        var (vulnerable, skippedProjects) = await VulnerabilityReport.BuildAsync(
             solution, metadata,
             onInfo: message => AnsiConsole.MarkupLine($"[grey]ℹ️  {Markup.Escape(message)}[/]"));
-        var (outdated, outdatedFailed) = await builder.BuildOutdatedAsync(solution);
+        var (outdated, outdatedFailed) = await new OutdatedReport(nuget).BuildAsync(solution);
         var redundant = settings.SkipRedundant
             ? []
             : await AnalyzeRedundantWithProgressAsync(nuget, solution, allPackages);
@@ -68,10 +68,10 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
         {
             SolutionName = solution.SolutionFile.Name,
             Vulnerable = vulnerable,
-            Deprecated = ReportBuilder.BuildDeprecated(metadata),
+            Deprecated = DeprecationReport.Build(metadata),
             Outdated = outdated,
             OutdatedScanFailed = outdatedFailed,
-            Licenses = ReportBuilder.BuildLicenses(metadata),
+            Licenses = LicenseResolver.BuildItems(metadata),
             Redundant = redundant,
             Unused = unused,
             SkippedProjects = skippedProjects,
@@ -113,7 +113,7 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
     }
 
     private static async Task<List<PackageMetadata>> FetchMetadataWithProgressAsync(
-        ReportBuilder builder, IReadOnlyCollection<CollectedPackage> packages)
+        PackageMetadataFetcher fetcher, IReadOnlyCollection<CollectedPackage> packages)
     {
         List<PackageMetadata> metadata = [];
 
@@ -122,7 +122,7 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
             .StartAsync(async progress =>
             {
                 var task = progress.AddTask("[cyan]Fetching NuGet metadata[/]", maxValue: packages.Count);
-                metadata = await builder.FetchMetadataAsync(packages, onPackageDone: () => task.Increment(1));
+                metadata = await fetcher.FetchAsync(packages, onPackageDone: () => task.Increment(1));
             });
 
         AnsiConsole.MarkupLine($"[green]✅ Metadata fetched for {packages.Count} packages[/]\n");
@@ -140,7 +140,7 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
         AnsiConsole.MarkupLine($"[cyan]🔄 Resolving {unresolvedCount} unidentified licenses{via}...[/]");
 
         var clearlyDefined = online ? new ClearlyDefinedClient(http) : null;
-        var resolved = await ReportBuilder.ResolveRemainingLicensesAsync(
+        var resolved = await LicenseResolver.ResolveRemainingAsync(
             metadata, new LicenseUrlResolver(http), legacyPackagesFolder, clearlyDefined);
 
         var stillUnknown = unresolvedCount - resolved;

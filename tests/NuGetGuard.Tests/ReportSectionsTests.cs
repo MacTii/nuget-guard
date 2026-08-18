@@ -3,7 +3,7 @@ using NuGetGuard.Services;
 
 namespace NuGetGuard.Tests;
 
-public class ReportBuilderTests
+public class ReportSectionsTests
 {
     [Fact]
     public void BuildDeprecated_MapsMetadataAndSortsBySeverity()
@@ -21,7 +21,7 @@ public class ReportBuilderTests
             NewMetadata("Fine.Package", _ => { }),
         };
 
-        var deprecated = ReportBuilder.BuildDeprecated(metadata);
+        var deprecated = DeprecationReport.Build(metadata);
 
         var item = deprecated.ShouldHaveSingleItem();
         item.Package.ShouldBe("Old.Package");
@@ -38,7 +38,7 @@ public class ReportBuilderTests
             NewMetadata("Old.Package", m => m.IsDeprecated = true),
         };
 
-        ReportBuilder.BuildDeprecated(metadata)
+        DeprecationReport.Build(metadata)
             .ShouldHaveSingleItem()
             .Alternative.ShouldBeNull();
     }
@@ -54,7 +54,7 @@ public class ReportBuilderTests
             NewMetadata("Paid.Pkg", m => m.License = "Commercial"),
         };
 
-        var licenses = ReportBuilder.BuildLicenses(metadata);
+        var licenses = LicenseResolver.BuildItems(metadata);
 
         licenses.Select(l => l.Package).ShouldBe(["Copyleft.Pkg", "Paid.Pkg", "Mystery.Pkg", "Permissive.Pkg"]);
         licenses.Select(l => l.Risk).ShouldBe(

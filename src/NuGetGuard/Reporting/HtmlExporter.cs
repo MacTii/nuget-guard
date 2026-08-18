@@ -15,12 +15,7 @@ public static class HtmlExporter
         var flat = report.Vulnerable.Concat(report.Deprecated).Concat(report.Outdated).ToList();
         var redundantRows = BuildRedundantRows(report);
         var unusedRows = BuildUnusedRows(report);
-        var allResults = flat
-            .OrderBy(r => Rankings.CategoryOrder(r.Category))
-            .ThenBy(r => Rankings.MaxSeverityForPackage(flat, r.Category, r.Package))
-            .ThenBy(r => r.Package, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(r => Rankings.SeverityOrder(r.Severity))
-            .ToList();
+        var allResults = Rankings.ForReport(flat).ToList();
 
         // Rowspan grouping per Category|Package
         var groupCounts = new Dictionary<string, int>();

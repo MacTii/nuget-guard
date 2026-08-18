@@ -46,4 +46,15 @@ public static class Rankings
             .ToList();
         return orders.Count == 0 ? 4 : orders.Min();
     }
+
+    /// <summary>
+    /// The order every export uses: worst category first, then the package's worst finding, then
+    /// the package name. Shared so the CSV and the HTML page cannot drift apart.
+    /// </summary>
+    public static IOrderedEnumerable<ReportItem> ForReport(IReadOnlyCollection<ReportItem> items) =>
+        items
+            .OrderBy(r => CategoryOrder(r.Category))
+            .ThenBy(r => MaxSeverityForPackage(items, r.Category, r.Package))
+            .ThenBy(r => r.Package, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(r => SeverityOrder(r.Severity));
 }
