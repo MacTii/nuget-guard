@@ -11,6 +11,13 @@ namespace NuGetGuard.Services;
 /// package's own metadata is misleading (Microsoft.AspNet.* links a EULA but is Apache-2.0),
 /// and proprietary packages no public SPDX source records. Entries a same-value prefix already
 /// covers were removed — they only duplicated the prefix.
+///
+/// Only packages whose licence is the same across every version belong here, because the map is
+/// keyed by package id alone. Packages that relicensed partway through their history —
+/// FluentAssertions, MediatR, AutoMapper, MassTransit, ImageSharp — are deliberately absent: a
+/// single entry would report the old terms for the new versions, and a permissive answer for a
+/// commercial package is the worst result a licence audit can produce. Those resolve from the
+/// licence file inside the version being scanned, or stay Unknown.
 /// </summary>
 public static class LicenseCatalog
 {
@@ -52,7 +59,6 @@ public static class LicenseCatalog
         // Older MSTest releases only linked the .NET library EULA; the package is MIT
         ["mstest.testadapter"] = "MIT",
         ["mstest.testframework"] = "MIT",
-        ["fluentassertions"] = "Apache-2.0",
         ["moq"] = "BSD-3-Clause",
         ["castle.core"] = "Apache-2.0",
         ["nsubstitute"] = "BSD-3-Clause",
@@ -66,7 +72,6 @@ public static class LicenseCatalog
         ["elmah"] = "Apache-2.0",
         // ── JSON / Serialization ──────────────────────────────────
         ["newtonsoft.json"] = "MIT",
-        ["newtonsoft.json.schema"] = "MIT",
         ["messagepack"] = "MIT",
         ["messagepack.annotations"] = "MIT",
         ["protobuf-net"] = "Apache-2.0",
@@ -108,7 +113,6 @@ public static class LicenseCatalog
         ["httpclientfactory"] = "MIT",
         ["odata.core"] = "MIT",
         // ── Mapping ───────────────────────────────────────────────
-        ["automapper"] = "MIT",
         ["mapster"] = "MIT",
         ["tinymapper"] = "MIT",
         // ── Validation ────────────────────────────────────────────
@@ -124,8 +128,6 @@ public static class LicenseCatalog
         ["jquery.ui.combined"] = "MIT",
         ["jquery.datatables"] = "MIT",
         // ── MediatR / CQRS / messaging ────────────────────────────
-        ["mediatr"] = "Apache-2.0",
-        ["masstransit"] = "Apache-2.0",
         ["nservicebus"] = "Commercial",
         ["rebus"] = "MIT",
         // ── Azure ─────────────────────────────────────────────────
@@ -205,7 +207,6 @@ public static class LicenseCatalog
         ["chosen"] = "MIT",
         ["chosen.jquery"] = "MIT",
         // ── Imaging ───────────────────────────────────────────────
-        ["imagesharp"] = "Apache-2.0",
         ["skiasharp"] = "MIT",
         ["imageresizer"] = "Apache-2.0",
         ["dotnetopenauth.core"] = "MS-PL",
@@ -310,15 +311,10 @@ public static class LicenseCatalog
         ("nunit.", "MIT"),
         ("xunit.", "Apache-2.0"),
         ("fluentvalidation.", "Apache-2.0"),
-        ("fluentassertions.", "Apache-2.0"),
-        ("automapper.", "MIT"),
         ("autofac.", "MIT"),
-        ("mediatr.", "Apache-2.0"),
-        ("masstransit.", "Apache-2.0"),
         ("hangfire.", "LGPL-3.0"),
         ("opentelemetry.", "Apache-2.0"),
         ("grpc.", "Apache-2.0"),
-        ("sixlabors.", "Apache-2.0"),
         ("polly.", "BSD-3-Clause"),
         ("npgsql.", "MIT"),
         ("magick.net", "Apache-2.0"),
@@ -358,6 +354,7 @@ public static class LicenseCatalog
         ["EPL-2.0"] = LicenseRisk.WeakCopyleft,
         // Proprietary — a known licence, just not an open-source one
         ["Commercial"] = LicenseRisk.Proprietary,
+        ["Six-Labors-Split"] = LicenseRisk.Proprietary,
         ["MS-EULA"] = LicenseRisk.Proprietary,
         ["Oracle-FUTC"] = LicenseRisk.Proprietary,
         // Strong copyleft (red)

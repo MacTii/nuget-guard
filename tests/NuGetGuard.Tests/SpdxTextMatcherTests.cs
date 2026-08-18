@@ -33,4 +33,14 @@ public class SpdxTextMatcherTests
     [InlineData("All rights reserved. Contact sales for terms.")]
     public void Identify_Unrecognisable_IsNull(string? text) =>
         SpdxTextMatcher.Identify(text).ShouldBeNull();
+
+    // Commercial licences whose text is built on, or quotes, an open-source one. A permissive
+    // answer here is the worst outcome a licence audit can produce, so they must win over the
+    // Apache/MIT patterns.
+    [Theory]
+    [InlineData("Six Labors Split License Version 1.0, June 2022. TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION", "Six-Labors-Split")]
+    [InlineData("XCEED SOFTWARE INC. COMMUNITY LICENSE AGREEMENT", "Commercial")]
+    [InlineData("By accessing code under the Lucky Penny Software GitHub Organization", "Commercial")]
+    public void Match_CommercialTextQuotingOpenSource_WinsOverPermissive(string text, string expected) =>
+        SpdxTextMatcher.Identify(text).ShouldBe(expected);
 }

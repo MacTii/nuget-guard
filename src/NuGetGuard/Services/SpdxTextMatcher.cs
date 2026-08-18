@@ -17,6 +17,14 @@ public static class SpdxTextMatcher
         // Proprietary licences first — their text often quotes an open-source one it partially
         // grants, so an MIT/Apache pattern checked earlier would misread the whole thing as free.
         ("Commercial", @"DUAL LICENSE AGREEMENT"),
+        // Built on Apache-2.0 boilerplate — it repeats "TERMS AND CONDITIONS FOR USE,
+        // REPRODUCTION, AND DISTRIBUTION" verbatim — so the Apache pattern would read this
+        // commercial licence as permissive. Used by SixLabors.ImageSharp 2.0 and newer.
+        ("Six-Labors-Split", @"Six Labors Split Licen[cs]e"),
+        // FluentAssertions 8 and newer.
+        ("Commercial", @"XCEED SOFTWARE"),
+        // MediatR 12+ and AutoMapper 15+ after both moved to a paid licence.
+        ("Commercial", @"Lucky Penny Software"),
         ("Oracle-FUTC", @"Oracle Free (Distribution|Use|Licen[cs]e)|Oracle Technology Network Licen[cs]e"),
         // Lesser and Affero come before plain GPL: their pages quote the GPL heavily, so a GPL
         // pattern checked first would misread an LGPL or AGPL licence as strong copyleft.

@@ -43,13 +43,13 @@ N is the number of distinct package + version pairs across the solution. The sam
 Licences are resolved in six steps, stopping at the first that succeeds. Everything offline comes first, so the network is only used for what is left:
 
 1. `licenseExpression` from the NuGet API — a plain SPDX id such as `MIT`.
-2. A curated database of packages a prefix cannot cover: licences that differ from their family, overrides where the package's own metadata is misleading, and proprietary packages. Entries a same-value prefix already handles were removed, so the database no longer grows for ordinary open-source packages.
-3. The shape of `licenseUrl` — `opensource.org/licenses/MIT` and similar URLs identify the licence on their own, without a request.
-4. **The licence file shipped inside the package.** Modern packages embed a licence file instead of linking to one, and the nuget.org page for those renders its text through scripting, so downloading it yields nothing. The restored package holds the file itself, so it is read from disk and matched against SPDX fingerprints.
+2. The shape of `licenseUrl` — `opensource.org/licenses/MIT` and similar URLs identify the licence on their own, without a request.
+3. **The licence file shipped inside the package.** Modern packages embed a licence file instead of linking to one, and the nuget.org page for those renders its text through scripting, so downloading it yields nothing. The restored package holds the file itself, so it is read from disk and matched against SPDX fingerprints.
+4. A curated database for packages that declare nothing at all — mostly old ones published before a licence was required. It is keyed by package id, so it deliberately runs *after* the licence file: only that file belongs to the exact version being scanned. Packages that changed their terms partway through their history are excluded from the database entirely, because no id-keyed answer can be right for every version of them.
 5. **The ClearlyDefined API** — only with `--online-licenses`. It scans package contents and curates the declared licence, resolving packages none of the offline steps could. Off by default, because a scan should stay offline and deterministic; its sentinel values (`NOASSERTION`, `OTHER`, `LicenseRef-*`) are treated as unresolved rather than invented licences.
 6. **Downloading the licence page and matching its text** — one HTTP request per package that still has an unidentified URL.
 
-The two text-matching steps (4 and 6) share the same fingerprints, ordered most specific first: the AGPL preamble before the GPL one, `Apache License, Version 2.0` before a bare mention of Apache.
+The two text-matching steps (3 and 6) share the same fingerprints, ordered most specific first. Commercial licences come before every open-source pattern, because their text often quotes or is built on one: the Six Labors Split License repeats Apache-2.0's "TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION" verbatim, so an Apache pattern checked first would report a paid licence as permissive. After those come the Affero preamble before the plain GPL one, and `Apache License, Version 2.0` before a bare mention of Apache.
 
 `Identified 15 more, 13 left unknown` therefore means 15 packages were classified by these steps and 13 could not be. What remains is normally genuine: commercial EULAs and packages that publish no licence metadata at all. Treat those as a compliance gap to check by hand, not as a safe default — `Unknown` means nothing was verified.
 

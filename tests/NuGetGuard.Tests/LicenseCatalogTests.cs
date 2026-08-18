@@ -110,6 +110,21 @@ public class LicenseCatalogTests
     public void GetKnownLicense_ArdalisFamily_ReturnsMit(string packageId) =>
         LicenseCatalog.GetKnownLicense(packageId).ShouldBe("MIT");
 
+    // These changed their terms partway through their history, so no id-keyed answer can be
+    // right for every version. Reporting the old permissive terms for a now-commercial package
+    // is the worst outcome a licence audit can produce, so they must resolve from the licence
+    // file of the version being scanned instead.
+    [Theory]
+    [InlineData("FluentAssertions")]
+    [InlineData("FluentAssertions.Analyzers")]
+    [InlineData("MediatR")]
+    [InlineData("AutoMapper")]
+    [InlineData("MassTransit")]
+    [InlineData("SixLabors.ImageSharp")]
+    [InlineData("Newtonsoft.Json.Schema")]
+    public void GetKnownLicense_RelicensedPackages_AreNotClassifiedById(string packageId) =>
+        LicenseCatalog.GetKnownLicense(packageId).ShouldBeNull();
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]

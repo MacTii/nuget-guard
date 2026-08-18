@@ -55,8 +55,11 @@ public sealed class ReportBuilder(NuGetClient nuget)
 
         foreach (var meta in unresolved)
         {
-            var known = LicenseCatalog.GetKnownLicense(meta.Id)
-                ?? PackageLicenseFileReader.Read(meta.Id, meta.Version, legacyPackagesFolder);
+            // The licence file ships inside this exact version, so it outranks the curated
+            // database, which can only be keyed by package id. Packages do change their terms
+            // between versions — FluentAssertions 8 and MediatR 14 both went commercial.
+            var known = PackageLicenseFileReader.Read(meta.Id, meta.Version, legacyPackagesFolder)
+                ?? LicenseCatalog.GetKnownLicense(meta.Id);
 
             if (known is not null)
                 meta.License = known;

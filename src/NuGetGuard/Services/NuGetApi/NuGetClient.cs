@@ -116,13 +116,10 @@ public sealed class NuGetClient(HttpClient http)
             metadata.License = entry.LicenseExpression.Trim();
             metadata.LicenseUrl = entry.LicenseUrl;
         }
-        // 2. Known package database (covers legacy packages with no SPDX)
-        else if (LicenseCatalog.GetKnownLicense(packageId) is { } known)
-        {
-            metadata.License = known;
-            metadata.LicenseUrl = entry.LicenseUrl;
-        }
-        // 3. Derive from licenseUrl pattern; the licence file and page content are tried in a later pass
+        // 2. Derive from licenseUrl pattern. The licence file shipped in the package, the
+        //    curated database and the page content are all tried in a later pass — the
+        //    database must not run here, because it is keyed by package id and would hide
+        //    the version-specific licence file of a package that changed its terms.
         else if (!string.IsNullOrEmpty(entry.LicenseUrl))
         {
             metadata.LicenseUrl = entry.LicenseUrl;
