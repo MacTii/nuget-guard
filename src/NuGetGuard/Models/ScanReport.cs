@@ -13,6 +13,10 @@ public sealed class ScanReport
     public List<UnusedProjectGroup> Unused { get; init; } = [];
     public List<string> SkippedProjects { get; init; } = [];
 
+    /// <summary>Set when the analysis was switched off, so "none found" is never shown for a check that never ran.</summary>
+    public bool RedundantSkipped { get; init; }
+    public bool UnusedSkipped { get; init; }
+
     public int StrongCopyleftCount => Licenses.Count(l => l.Risk == LicenseRisk.StrongCopyleft);
     public int ProprietaryLicenseCount => Licenses.Count(l => l.Risk == LicenseRisk.Proprietary);
     public int UnknownLicenseCount => Licenses.Count(l => l.Risk == LicenseRisk.Unknown);

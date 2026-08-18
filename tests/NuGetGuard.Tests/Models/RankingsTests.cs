@@ -1,6 +1,6 @@
 using NuGetGuard.Models;
 
-namespace NuGetGuard.Tests;
+namespace NuGetGuard.Tests.Models;
 
 public class RankingsTests
 {

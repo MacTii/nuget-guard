@@ -78,7 +78,9 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
             OutdatedScanFailed = outdatedFailed,
             Licenses = LicenseResolver.BuildItems(metadata),
             Redundant = redundant,
+            RedundantSkipped = settings.SkipRedundant,
             Unused = unused,
+            UnusedSkipped = settings.SkipUnused,
             SkippedProjects = skippedProjects,
         };
 

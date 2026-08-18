@@ -1,7 +1,7 @@
 using System.Reflection;
 using NuGetGuard.Services.Licensing.ClearlyDefined;
 
-namespace NuGetGuard.Tests;
+namespace NuGetGuard.Tests.Licensing;
 
 public class ClearlyDefinedClientTests
 {

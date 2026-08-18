@@ -1,7 +1,7 @@
 using NuGetGuard.Services.Discovery;
 using NuGetGuard.Services;
 
-namespace NuGetGuard.Tests;
+namespace NuGetGuard.Tests.Discovery;
 
 public sealed class ProjectFileReaderTests : IDisposable
 {

@@ -7,7 +7,7 @@ Find vulnerable, deprecated and outdated packages, spot risky or proprietary lic
 
 <!-- Keep the badges on one source line: renderers that treat a soft line break as
      <br> (editor previews, comment boxes) would otherwise stack them one per line. -->
-![.NET 8+](https://img.shields.io/badge/.NET-8%2B-512BD4?logo=dotnet) ![dotnet tool](https://img.shields.io/badge/dotnet-tool-0075ca) ![nuget.org](https://img.shields.io/badge/nuget.org-not%20published-lightgrey?logo=nuget) ![License: MIT](https://img.shields.io/badge/License-MIT-green) ![Tests](https://img.shields.io/badge/tests-179%20passing-3fb950)
+![.NET 8+](https://img.shields.io/badge/.NET-8%2B-512BD4?logo=dotnet) ![dotnet tool](https://img.shields.io/badge/dotnet-tool-0075ca) ![nuget.org](https://img.shields.io/badge/nuget.org-not%20published-lightgrey?logo=nuget) ![License: MIT](https://img.shields.io/badge/License-MIT-green) ![Tests](https://img.shields.io/badge/tests-184%20passing-3fb950)
 
 [**Install**](#-install) · [**Usage**](#-usage) · [**What it checks**](#-what-it-checks) · [**Docs**](docs/) · [**CI/CD**](#️-cicd)
 

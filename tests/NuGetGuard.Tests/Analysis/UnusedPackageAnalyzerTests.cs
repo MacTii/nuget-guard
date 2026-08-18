@@ -3,7 +3,7 @@ using NuGetGuard.Services;
 using NuGetGuard.Services.Analysis;
 using NuGetGuard.Services.Discovery;
 
-namespace NuGetGuard.Tests;
+namespace NuGetGuard.Tests.Analysis;
 
 public sealed class UnusedPackageAnalyzerTests : IDisposable
 {

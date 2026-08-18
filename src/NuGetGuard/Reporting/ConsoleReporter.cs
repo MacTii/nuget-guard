@@ -133,6 +133,14 @@ public static class ConsoleReporter
     {
         AnsiConsole.MarkupLine("\n[fuchsia bold]━━━ 🔗 REDUNDANT PACKAGES (covered transitively) ━━━[/]");
 
+        // A skipped check found nothing because it never ran, so "none found" would
+        // read as a clean result.
+        if (report.RedundantSkipped)
+        {
+            AnsiConsole.MarkupLine("  [grey]⏭  Skipped — [/][cyan]--skip-redundant[/][grey] was given.[/]");
+            return;
+        }
+
         if (report.Redundant.Count == 0)
         {
             AnsiConsole.MarkupLine("  [green]✅ No redundant packages found.[/]");
@@ -163,6 +171,14 @@ public static class ConsoleReporter
     private static void RenderUnused(ScanReport report)
     {
         AnsiConsole.MarkupLine("\n[aqua bold]━━━ 🧹 POSSIBLY UNUSED PACKAGES ━━━[/]");
+
+        // A skipped check found nothing because it never ran, so "none found" would
+        // read as a clean result.
+        if (report.UnusedSkipped)
+        {
+            AnsiConsole.MarkupLine("  [grey]⏭  Skipped — [/][cyan]--skip-unused[/][grey] was given.[/]");
+            return;
+        }
 
         if (report.Unused.Count == 0)
         {
@@ -196,9 +212,9 @@ public static class ConsoleReporter
             ? "  [yellow]Outdated        : ⚠️  scan failed (build errors)[/]"
             : $"  Outdated        : {(report.Outdated.Count > 0 ? $"📦 {report.Outdated.Count}" : "✅ 0")}");
         AnsiConsole.MarkupLine(
-            $"  Redundant       : {(report.RedundantCount > 0 ? $"🔗 {report.RedundantCount}" : "✅ 0")}");
+            $"  Redundant       : {(report.RedundantSkipped ? "⏭  skipped" : report.RedundantCount > 0 ? $"🔗 {report.RedundantCount}" : "✅ 0")}");
         AnsiConsole.MarkupLine(
-            $"  Possibly unused : {(report.UnusedCount > 0 ? $"🧹 {report.UnusedCount}" : "✅ 0")}");
+            $"  Possibly unused : {(report.UnusedSkipped ? "⏭  skipped" : report.UnusedCount > 0 ? $"🧹 {report.UnusedCount}" : "✅ 0")}");
         AnsiConsole.MarkupLine(
             $"  Licenses total  : {report.Licenses.Count}  (🔴 StrongCopyleft: {report.StrongCopyleftCount}  🔒 Proprietary: {report.ProprietaryLicenseCount}  ⚪ Unknown: {report.UnknownLicenseCount})");
     }

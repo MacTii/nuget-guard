@@ -3,7 +3,7 @@ using NuGetGuard.Services.Analysis;
 using NuGetGuard.Services;
 using System.Reflection;
 
-namespace NuGetGuard.Tests;
+namespace NuGetGuard.Tests.Analysis;
 
 /// <summary>Covers the version-comparison helpers behind the redundant check's ⚠ note.</summary>
 public class RedundancyVersionNoteTests

@@ -2,7 +2,7 @@ using NuGetGuard.Models;
 using NuGetGuard.Services.Licensing;
 using NuGetGuard.Services;
 
-namespace NuGetGuard.Tests;
+namespace NuGetGuard.Tests.Licensing;
 
 public class LicenseCatalogTests
 {

@@ -1,7 +1,7 @@
 using NuGetGuard.Models;
 using NuGetGuard.Reporting;
 
-namespace NuGetGuard.Tests;
+namespace NuGetGuard.Tests.Reporting;
 
 public sealed class CsvExporterTests : IDisposable
 {

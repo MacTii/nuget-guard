@@ -1,7 +1,7 @@
 using NuGetGuard.Services.Packages;
 using NuGetGuard.Services;
 
-namespace NuGetGuard.Tests;
+namespace NuGetGuard.Tests.Packages;
 
 public class AssemblyNamespaceReaderTests
 {

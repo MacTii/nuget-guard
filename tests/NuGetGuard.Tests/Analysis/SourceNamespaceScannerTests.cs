@@ -1,7 +1,7 @@
 using NuGetGuard.Services.Analysis;
 using NuGetGuard.Services;
 
-namespace NuGetGuard.Tests;
+namespace NuGetGuard.Tests.Analysis;
 
 public sealed class SourceNamespaceScannerTests : IDisposable
 {
