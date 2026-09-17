@@ -1,4 +1,4 @@
-using NuGetGuard.Models;
+using NuGetGuard.Reporting;
 
 namespace NuGetGuard.Commands;
 

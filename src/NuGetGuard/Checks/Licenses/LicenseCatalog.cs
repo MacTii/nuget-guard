@@ -1,0 +1,458 @@
+namespace NuGetGuard.Checks.Licenses;
+
+/// <summary>
+/// Static knowledge base for packages that ship no <c>licenseExpression</c>: license risk
+/// classification and licenseUrl → SPDX patterns, plus a curated package → license map.
+///
+/// The map holds only what a prefix cannot: licences that differ from their family
+/// (system.data.sqlite is MS-PL, not the MIT the system. prefix implies), overrides where the
+/// package's own metadata is misleading (Microsoft.AspNet.* links a EULA but is Apache-2.0),
+/// and proprietary packages no public SPDX source records. Entries a same-value prefix already
+/// covers were removed — they only duplicated the prefix.
+///
+/// Only packages whose licence is the same across every version belong here, because the map is
+/// keyed by package id alone. Packages that relicensed partway through their history —
+/// FluentAssertions, MediatR, AutoMapper, MassTransit, ImageSharp — are deliberately absent: a
+/// single entry would report the old terms for the new versions, and a permissive answer for a
+/// commercial package is the worst result a licence audit can produce. Those resolve from the
+/// licence file inside the version being scanned, or stay Unknown.
+/// </summary>
+public static class LicenseCatalog
+{
+    private static readonly Dictionary<string, string> KnownPackageLicenses = new(StringComparer.OrdinalIgnoreCase)
+    {
+        // ── Microsoft / ASP.NET / .NET ────────────────────────────
+        ["microsoft.owin"] = "Apache-2.0",
+        ["microsoft.owin.cors"] = "Apache-2.0",
+        ["microsoft.owin.host.systemweb"] = "Apache-2.0",
+        ["microsoft.owin.security"] = "Apache-2.0",
+        ["microsoft.owin.security.cookies"] = "Apache-2.0",
+        ["microsoft.owin.security.facebook"] = "Apache-2.0",
+        ["microsoft.owin.security.google"] = "Apache-2.0",
+        ["microsoft.owin.security.jwt"] = "Apache-2.0",
+        ["microsoft.owin.security.microsoftaccount"] = "Apache-2.0",
+        ["microsoft.owin.security.oauth"] = "Apache-2.0",
+        ["microsoft.owin.security.twitter"] = "Apache-2.0",
+        ["microsoft.owin.testing"] = "Apache-2.0",
+        ["owin"] = "Apache-2.0",
+        // ── Microsoft general packages ────────────────────────────
+        ["microsoft.bcl"] = "MIT",
+        ["microsoft.bcl.build"] = "MIT",
+        ["microsoft.bcl.async"] = "MIT",
+        ["microsoft.bcl.asyncinterfaces"] = "MIT",
+        ["microsoft.csharp"] = "MIT",
+        ["microsoft.codedom.providers.dotnetcompilerplatform"] = "MIT",
+        // Ships the Microsoft .NET Library terms as its licence file, not an open-source licence
+        ["microsoft.web.infrastructure"] = "MS-EULA",
+        ["entityframework"] = "MIT",
+        ["entityframework.sqlserver"] = "MIT",
+        ["entityframework.sqlservercompact"] = "MIT",
+        ["microsoft.entityframeworkcore"] = "MIT",
+        // ── NUnit / xUnit / testing ───────────────────────────────
+        ["nunit"] = "MIT",
+        ["nunit3testadapter"] = "MIT",
+        ["nunitlite"] = "MIT",
+        ["xunit"] = "Apache-2.0",
+        ["microsoft.testplatform.testhost"] = "MIT",
+        // Older MSTest releases only linked the .NET library EULA; the package is MIT
+        ["mstest.testadapter"] = "MIT",
+        ["mstest.testframework"] = "MIT",
+        ["moq"] = "BSD-3-Clause",
+        ["castle.core"] = "Apache-2.0",
+        ["nsubstitute"] = "BSD-3-Clause",
+        ["bogus"] = "MIT",
+        ["fakeiteasly"] = "MIT",
+        ["comparenetobjects"] = "MIT",
+        // ── Logging ───────────────────────────────────────────────
+        ["serilog"] = "Apache-2.0",
+        ["log4net"] = "Apache-2.0",
+        ["nlog"] = "BSD-3-Clause",
+        ["elmah"] = "Apache-2.0",
+        // ── JSON / Serialization ──────────────────────────────────
+        ["newtonsoft.json"] = "MIT",
+        ["messagepack"] = "MIT",
+        ["messagepack.annotations"] = "MIT",
+        ["protobuf-net"] = "Apache-2.0",
+        ["protobuf-net.core"] = "Apache-2.0",
+        ["google.protobuf"] = "BSD-3-Clause",
+        ["apache.avro"] = "Apache-2.0",
+        ["csvhelper"] = "MS-PL",
+        ["tinyjson"] = "MIT",
+        // ── Database / ORM ────────────────────────────────────────
+        ["dapper"] = "Apache-2.0",
+        ["dapper.contrib"] = "Apache-2.0",
+        ["nhibernate"] = "LGPL-2.1",
+        ["fluent-nhibernate"] = "BSD-3-Clause",
+        ["npgsql"] = "MIT",
+        ["mongodb.driver"] = "Apache-2.0",
+        ["mongodb.bson"] = "Apache-2.0",
+        ["stackexchange.redis"] = "MIT",
+        ["mysql.data"] = "GPL-2.0",
+        ["mysqlconnector"] = "MIT",
+        ["oracle.manageddataaccess"] = "Commercial",
+        ["system.data.sqlite"] = "MS-PL",
+        ["sqlite-net-pcl"] = "MIT",
+        ["microsoft.data.sqlite"] = "MIT",
+        ["microsoft.data.sqlite.core"] = "MIT",
+        ["microsoft.data.sqlclient"] = "MIT",
+        // The SNI packages ship the Microsoft .NET Library terms, not the MIT licence of the parent
+        ["microsoft.sqlserver.sqlmanagementobjects"] = "MIT",
+        ["linq2db"] = "MIT",
+        ["linq2db.sqlite"] = "MIT",
+        ["linq2db.sqlserver"] = "MIT",
+        ["marten"] = "MIT",
+        ["realm"] = "Apache-2.0",
+        // ── HTTP / REST ───────────────────────────────────────────
+        ["restsharp"] = "Apache-2.0",
+        ["flurl"] = "MIT",
+        ["flurl.http"] = "MIT",
+        ["refit"] = "MIT",
+        ["polly"] = "BSD-3-Clause",
+        ["httpclientfactory"] = "MIT",
+        ["odata.core"] = "MIT",
+        // ── Mapping ───────────────────────────────────────────────
+        ["mapster"] = "MIT",
+        ["tinymapper"] = "MIT",
+        // ── Validation ────────────────────────────────────────────
+        ["fluentvalidation"] = "Apache-2.0",
+        ["jquery.validation"] = "MIT",
+        ["jquery.validation.unobtrusive"] = "MIT",
+        // Old releases link to a Microsoft EULA; version 4 declares MIT, as does the source repository
+        ["microsoft.jquery.unobtrusive.validation"] = "MIT",
+        ["microsoft.jquery.unobtrusive.ajax"] = "MIT",
+        ["modernizr"] = "MIT",
+        ["popper.js"] = "MIT",
+        ["jquery"] = "MIT",
+        ["jquery.ui.combined"] = "MIT",
+        ["jquery.datatables"] = "MIT",
+        // ── MediatR / CQRS / messaging ────────────────────────────
+        ["nservicebus"] = "Commercial",
+        ["rebus"] = "MIT",
+        // ── Azure ─────────────────────────────────────────────────
+        ["windowsazure.storage"] = "Apache-2.0",
+        // ── Dependency Injection ──────────────────────────────────
+        ["autofac"] = "MIT",
+        ["ninject"] = "Apache-2.0",
+        ["simpleinjector"] = "MIT",
+        ["lamar"] = "MIT",
+        ["structuremap"] = "Apache-2.0",
+        ["unity"] = "Apache-2.0",
+        ["unity.container"] = "Apache-2.0",
+        ["dryloc.dll"] = "MIT",
+        ["lightinject"] = "MIT",
+        // ── Utilities ─────────────────────────────────────────────
+        ["humanizer"] = "MIT",
+        ["humanizer.core"] = "MIT",
+        ["noda time"] = "Apache-2.0",
+        ["nodatime"] = "Apache-2.0",
+        ["cronexpressiondescriptor"] = "MIT",
+        ["ncrontab"] = "Apache-2.0",
+        ["hangfire"] = "LGPL-3.0",
+        ["quartz"] = "Apache-2.0",
+        ["quartz.net"] = "Apache-2.0",
+        ["coravel"] = "MIT",
+        ["ipnetwork2"] = "BSD-2-Clause",
+        ["handlebar.net"] = "MIT",
+        ["handlebars.net"] = "MIT",
+        ["scriban"] = "BSD-2-Clause",
+        ["fluid.core"] = "MIT",
+        ["dotliquid"] = "Apache-2.0",
+        ["markdig"] = "BSD-2-Clause",
+        ["commonmark.net"] = "BSD-3-Clause",
+        ["yaml-dotnet"] = "MIT",
+        ["yamldotnet"] = "MIT",
+        ["iron.python"] = "Apache-2.0",
+        ["ironpython"] = "Apache-2.0",
+        ["fody"] = "MIT",
+        ["propertychanged.fody"] = "MIT",
+        ["methoddecorator.fody"] = "MIT",
+        ["antlr4.runtime.standard"] = "BSD-3-Clause",
+        ["antlr"] = "BSD-3-Clause",
+        ["antlr4"] = "BSD-3-Clause",
+        ["utf.unknown"] = "MPL-1.1",
+        // ── File / Document ───────────────────────────────────────
+        ["7zsharp"] = "LGPL-2.1",
+        ["7z.libs"] = "LGPL-2.1",
+        ["sevenzipsharp"] = "LGPL-3.0",
+        ["squid-box.sevenzipsharp"] = "LGPL-3.0",
+        ["sevenzipsharp.interop"] = "LGPL-2.1",
+        ["dotnetzip"] = "MS-PL",
+        ["sharpziplib"] = "MIT",
+        ["ionmezle.sharpziplib"] = "MIT",
+        ["closedxml"] = "MIT",
+        ["documentformat.openxml"] = "MIT",
+        ["epplus"] = "LGPL-3.0",
+        ["epplus.interfaces"] = "LGPL-3.0",
+        ["exceldatareader"] = "MIT",
+        ["exceldatareader.dataset"] = "MIT",
+        ["itextsharp"] = "AGPL-3.0",
+        ["itext7"] = "AGPL-3.0",
+        ["itext7.bouncy-castle-adapter"] = "AGPL-3.0",
+        ["pdfsharp"] = "MIT",
+        ["pdfsharp-wpf"] = "MIT",
+        ["dinktohtml"] = "MIT",
+        ["dinktohtml.native.osx"] = "MIT",
+        ["dinktohtml.native.linux"] = "MIT",
+        ["dinktohtml.native.windows"] = "MIT",
+        ["wkhtmltopdf-dotnet"] = "MIT",
+        ["ghostscript.net"] = "AGPL-3.0",
+        ["edtftpnet"] = "MIT",
+        ["edtftpnet-pro"] = "Commercial",
+        ["fluentstorage"] = "MIT",
+        // CKEditor 3/4 is tri-licensed — the licensee may pick GPL, LGPL or MPL, so the effective risk is weak copyleft
+        ["ckeditor"] = "GPL-2.0-or-later OR LGPL-2.1-or-later OR MPL-1.1",
+        ["ckeditor-full"] = "GPL-2.0-or-later OR LGPL-2.1-or-later OR MPL-1.1",
+        ["chosen"] = "MIT",
+        ["chosen.jquery"] = "MIT",
+        // ── Imaging ───────────────────────────────────────────────
+        ["skiasharp"] = "MIT",
+        ["imageresizer"] = "Apache-2.0",
+        ["dotnetopenauth.core"] = "MS-PL",
+        ["dotnetopenauth.aspnet"] = "MS-PL",
+        // ── Selenium / UI testing ─────────────────────────────────
+        ["selenium.webdriver"] = "Apache-2.0",
+        ["selenium.webdriver.chromedriver"] = "Apache-2.0",
+        ["selenium.webdriver.firefoxdriver"] = "Apache-2.0",
+        ["selenium.support"] = "Apache-2.0",
+        ["dotnetseleniumextras.waithelpers"] = "Apache-2.0",
+        ["dotnetseleniumextras.pageobjects"] = "Apache-2.0",
+        ["playwright"] = "MIT",
+        ["microsoft.playwright"] = "MIT",
+        // ── gRPC ──────────────────────────────────────────────────
+        ["grpc"] = "Apache-2.0",
+        ["google.api.commonprotos"] = "Apache-2.0",
+        // ── Messaging / queues ────────────────────────────────────
+        ["easynetq"] = "MIT",
+        ["rabbitmq.client"] = "Apache-2.0",
+        ["confluent.kafka"] = "Apache-2.0",
+        ["confluent.schemaregistry"] = "Apache-2.0",
+        // ── Security / Crypto ─────────────────────────────────────
+        ["bouncycastle.cryptography"] = "MIT",
+        ["bouncycastle"] = "MIT",
+        ["jose-jwt"] = "MIT",
+        // ── Misc popular packages ─────────────────────────────────
+        ["morelinq"] = "Apache-2.0",
+        ["linq.extras"] = "MIT",
+        ["z.extmethods"] = "MIT",
+        ["z.expressions.eval"] = "MIT",
+        ["linq2twitter"] = "MS-PL",
+        ["twitterizer2"] = "BSD-3-Clause",
+        ["tweetinvi"] = "MIT",
+        ["mailkit"] = "MIT",
+        ["mimekit"] = "MIT",
+        ["fluentemail.core"] = "MIT",
+        ["fluentemail.smtp"] = "MIT",
+        ["twilio"] = "MIT",
+        ["stripe.net"] = "Apache-2.0",
+        ["braintree"] = "MIT",
+        ["paypalcheckoutsdk"] = "Apache-2.0",
+        ["smartformat.net"] = "MIT",
+        ["pdfpig"] = "Apache-2.0",
+        ["benchmark.net"] = "MIT",
+        ["benchmarkdotnet"] = "MIT",
+        ["nito.asyncex"] = "MIT",
+        ["nito.asyncex.coordination"] = "MIT",
+        ["nito.asyncex.tasks"] = "MIT",
+        ["scrutor"] = "MIT",
+        ["coverlet.collector"] = "MIT",
+        ["microsoft.codecoverage"] = "MIT",
+        ["opentelemetry"] = "Apache-2.0",
+        ["prometheus-net"] = "MIT",
+        ["prometheus-net.aspnetcore"] = "MIT",
+        ["app-metrics-core"] = "Apache-2.0",
+        ["healthchecks.ui"] = "Apache-2.0",
+        ["healthchecks.sqlserver"] = "MIT",
+        ["swashbuckle.aspnetcore"] = "MIT",
+        ["swashbuckle.aspnetcore.swagger"] = "MIT",
+        ["swashbuckle.aspnetcore.swaggergen"] = "MIT",
+        ["swashbuckle.aspnetcore.swaggerui"] = "MIT",
+        ["swashbuckle"] = "BSD-2-Clause",
+        ["nswag.aspnetcore"] = "MIT",
+        ["nswag.core"] = "MIT",
+        ["asp.versioning.mvc"] = "MIT",
+        ["asp.versioning.http"] = "MIT",
+        ["specflow"] = "BSD-3-Clause",
+        ["specflow.nunit"] = "BSD-3-Clause",
+        ["specflow.xunit"] = "BSD-3-Clause",
+        ["reqnroll"] = "BSD-3-Clause",
+        ["telerik.justmock"] = "Commercial",
+        ["wisej.net"] = "Commercial",
+        ["devexpress"] = "Commercial",
+        ["syncfusion"] = "Commercial",
+        ["infragistics"] = "Commercial",
+        ["componentone"] = "Commercial",
+    };
+
+    // Ordered: first matching prefix wins (covers Microsoft.AspNetCore.*, Azure.*, etc.)
+    private static readonly (string Prefix, string License)[] PrefixMap =
+    [
+        // Every Ardalis.* package that declares a licence declares MIT; the few that declare
+        // nothing are companion packages of those, so the prefix covers them too.
+        ("ardalis.", "MIT"),
+        ("microsoft.aspnetcore.", "MIT"),
+        ("microsoft.aspnet.", "Apache-2.0"),
+        ("microsoft.extensions.", "MIT"),
+        ("microsoft.entityframeworkcore.", "MIT"),
+        ("microsoft.azure.", "MIT"),
+        ("microsoft.identity.", "MIT"),
+        ("microsoft.identitymodel.", "MIT"),
+        ("microsoft.net.", "MIT"),
+        ("microsoft.netcore.", "MIT"),
+        ("microsoft.visualstudio.", "MIT"),
+        ("microsoft.codeanalysis.", "MIT"),
+        ("microsoft.build.", "MIT"),
+        ("system.", "MIT"),
+        ("azure.", "MIT"),
+        ("awssdk.", "Apache-2.0"),
+        ("serilog.", "Apache-2.0"),
+        ("nlog.", "BSD-3-Clause"),
+        ("nunit.", "MIT"),
+        ("xunit.", "Apache-2.0"),
+        ("fluentvalidation.", "Apache-2.0"),
+        ("autofac.", "MIT"),
+        ("hangfire.", "LGPL-3.0"),
+        ("opentelemetry.", "Apache-2.0"),
+        ("grpc.", "Apache-2.0"),
+        ("polly.", "BSD-3-Clause"),
+        ("npgsql.", "MIT"),
+        ("magick.net", "Apache-2.0"),
+    ];
+
+    private static readonly Dictionary<string, LicenseRisk> LicenseRiskMap = new(StringComparer.OrdinalIgnoreCase)
+    {
+        // Permissive (green)
+        ["MIT"] = LicenseRisk.Permissive,
+        ["Apache-2.0"] = LicenseRisk.Permissive,
+        ["Apache 2.0"] = LicenseRisk.Permissive,
+        ["BSD-2-Clause"] = LicenseRisk.Permissive,
+        ["BSD-3-Clause"] = LicenseRisk.Permissive,
+        ["ISC"] = LicenseRisk.Permissive,
+        ["Unlicense"] = LicenseRisk.Permissive,
+        ["CC0-1.0"] = LicenseRisk.Permissive,
+        ["MS-PL"] = LicenseRisk.Permissive,
+        ["WTFPL"] = LicenseRisk.Permissive,
+        ["Zlib"] = LicenseRisk.Permissive,
+        ["PSF-2.0"] = LicenseRisk.Permissive,
+        ["0BSD"] = LicenseRisk.Permissive,
+        ["BSL-1.0"] = LicenseRisk.Permissive,
+        // Weak copyleft (yellow)
+        ["LGPL-2.0"] = LicenseRisk.WeakCopyleft,
+        ["LGPL-2.0-only"] = LicenseRisk.WeakCopyleft,
+        ["LGPL-2.1"] = LicenseRisk.WeakCopyleft,
+        ["LGPL-2.1-only"] = LicenseRisk.WeakCopyleft,
+        ["LGPL-3.0"] = LicenseRisk.WeakCopyleft,
+        ["LGPL-3.0-only"] = LicenseRisk.WeakCopyleft,
+        ["MPL-1.1"] = LicenseRisk.WeakCopyleft,
+        ["MPL-2.0"] = LicenseRisk.WeakCopyleft,
+        ["EUPL-1.1"] = LicenseRisk.WeakCopyleft,
+        ["EUPL-1.2"] = LicenseRisk.WeakCopyleft,
+        ["MS-RL"] = LicenseRisk.WeakCopyleft,
+        ["CDDL-1.0"] = LicenseRisk.WeakCopyleft,
+        ["EPL-1.0"] = LicenseRisk.WeakCopyleft,
+        ["EPL-2.0"] = LicenseRisk.WeakCopyleft,
+        // Proprietary — a known licence, just not an open-source one
+        ["Commercial"] = LicenseRisk.Proprietary,
+        ["Six-Labors-Split"] = LicenseRisk.Proprietary,
+        ["MS-EULA"] = LicenseRisk.Proprietary,
+        ["Oracle-FUTC"] = LicenseRisk.Proprietary,
+        // Strong copyleft (red)
+        ["GPL-2.0"] = LicenseRisk.StrongCopyleft,
+        ["GPL-2.0-only"] = LicenseRisk.StrongCopyleft,
+        ["GPL-2.0-or-later"] = LicenseRisk.StrongCopyleft,
+        ["GPL-3.0"] = LicenseRisk.StrongCopyleft,
+        ["GPL-3.0-only"] = LicenseRisk.StrongCopyleft,
+        ["GPL-3.0-or-later"] = LicenseRisk.StrongCopyleft,
+        ["AGPL-3.0"] = LicenseRisk.StrongCopyleft,
+        ["AGPL-3.0-only"] = LicenseRisk.StrongCopyleft,
+        ["AGPL-3.0-or-later"] = LicenseRisk.StrongCopyleft,
+        ["OSL-3.0"] = LicenseRisk.StrongCopyleft,
+        ["CC-BY-SA-4.0"] = LicenseRisk.StrongCopyleft,
+        ["CC-BY-NC-4.0"] = LicenseRisk.StrongCopyleft,
+    };
+
+    public static string? GetKnownLicense(string? packageId)
+    {
+        if (string.IsNullOrEmpty(packageId))
+            return null;
+
+        if (KnownPackageLicenses.TryGetValue(packageId, out var license))
+            return license;
+
+        foreach (var (prefix, prefixLicense) in PrefixMap)
+        {
+            if (packageId.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                return prefixLicense;
+        }
+
+        return null;
+    }
+
+    public static LicenseRisk GetRisk(string? license)
+    {
+        if (string.IsNullOrEmpty(license) || license == "Unknown")
+            return LicenseRisk.Unknown;
+
+        if (LicenseRiskMap.TryGetValue(license, out var risk))
+            return risk;
+
+        // Disjunctive licence ("A OR B"): the licensee picks any one, so the effective
+        // risk is the most permissive term. A tri-licensed package (GPL OR LGPL OR MPL)
+        // is therefore weak copyleft, not strong.
+        if (ContainsOperator(license, "OR"))
+            return Combine(license, "OR", pickMostPermissive: true);
+
+        // Conjunctive licence ("A AND B"): every term applies, so take the most restrictive.
+        if (ContainsOperator(license, "AND"))
+            return Combine(license, "AND", pickMostPermissive: false);
+
+        // Fuzzy match for a single identifier we don't hold verbatim
+        if (license.Contains("GPL", StringComparison.OrdinalIgnoreCase) &&
+            !license.Contains("LGPL", StringComparison.OrdinalIgnoreCase))
+            return LicenseRisk.StrongCopyleft;
+        if (license.Contains("LGPL", StringComparison.OrdinalIgnoreCase))
+            return LicenseRisk.WeakCopyleft;
+        if (license.Contains("MPL", StringComparison.OrdinalIgnoreCase) ||
+            license.Contains("EPL", StringComparison.OrdinalIgnoreCase) ||
+            license.Contains("EUPL", StringComparison.OrdinalIgnoreCase) ||
+            license.Contains("CDDL", StringComparison.OrdinalIgnoreCase))
+            return LicenseRisk.WeakCopyleft;
+        if (license.Contains("MIT", StringComparison.OrdinalIgnoreCase) ||
+            license.Contains("Apache", StringComparison.OrdinalIgnoreCase) ||
+            license.Contains("BSD", StringComparison.OrdinalIgnoreCase) ||
+            license.Contains("ISC", StringComparison.OrdinalIgnoreCase) ||
+            license.Contains("Unlicense", StringComparison.OrdinalIgnoreCase) ||
+            license.Contains("Ms-PL", StringComparison.OrdinalIgnoreCase))
+            return LicenseRisk.Permissive;
+
+        return LicenseRisk.Unknown;
+    }
+
+    private static bool ContainsOperator(string license, string op) =>
+        license.Contains($" {op} ", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Classifies each term of a compound expression and combines them. For a disjunctive
+    /// expression the most permissive term wins; for a conjunctive one, the most restrictive.
+    /// Unknown terms are ignored — one unrecognised half must not make the whole thing look safe.
+    /// </summary>
+    private static LicenseRisk Combine(string license, string op, bool pickMostPermissive)
+    {
+        var separator = $" {op} ";
+        var terms = license.Split(separator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        LicenseRisk? chosen = null;
+        foreach (var term in terms)
+        {
+            var risk = GetRisk(term.Trim('(', ')', ' '));
+            if (risk == LicenseRisk.Unknown)
+                continue;
+
+            // Higher enum value == more permissive.
+            var better = pickMostPermissive ? (int)risk > (int)(chosen ?? risk) : (int)risk < (int)(chosen ?? risk);
+            if (chosen is null || better)
+                chosen = risk;
+        }
+
+        return chosen ?? LicenseRisk.Unknown;
+    }
+}

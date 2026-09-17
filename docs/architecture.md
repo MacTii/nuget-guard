@@ -2,31 +2,35 @@
 
 How the code is organised and how each feature is built — a tour for anyone reading the source. For what the tool does rather than how, see [how it works](how-it-works.md) and [the checks](checks.md).
 
-## Layers
+## Layout
 
-One project, layered by folder. Dependencies point one way:
+One project, organised by feature: each check the tool runs has its own folder, holding its logic and the model of its report section. What several checks share sits below them; what presents the result sits above.
 
 ```
-Commands  ->  Reporting  ->  Services  ->  Models
-  (CLI)        (output)      (logic)    (no dependencies)
+Commands  ->  Reporting  ->  Checks/*  ->  Infrastructure  ->  Discovery
+  (CLI)        (output)     (one per      (NuGet API, dotnet,  (solution,
+                             check)        packages on disk)    projects)
 ```
 
 | Folder | Holds | Rule |
 |---|---|---|
-| `Commands/` | `ScanCommand`, `ScanSettings`, `FailOn`, `ExitCodeResolver` | Spectre.Console.Cli lives here and nowhere else |
-| `Services/` | the scan itself, split one folder per concern | no console output — progress is reported through callbacks |
-| `Services/Discovery/` | finding the solution, reading its projects and declared packages | depends on nothing else in `Services/` |
-| `Services/Packages/` | reading restored packages from disk: folders, assemblies, `.nuspec` | nothing is executed — assemblies are read as metadata only |
-| `Services/Licensing/` | identifying a licence and classifying its risk | the licence file of the scanned version outranks the id-keyed database |
-| `Services/Analysis/` | redundancy and unused-package detection | the two slowest checks, both skippable |
-| `Services/Reports/` | building the vulnerable, deprecated and outdated sections | one class per section, so a check has one place to change |
-| `Services/DotNet/`, `Services/NuGetApi/` | external integrations and their JSON models | DTOs are `internal`, so API shapes never leak |
+| `Commands/` | `ScanCommand`, `ScanSettings`, `FailOn`, `ExitCodeResolver` | Spectre.Console.Cli lives here and nowhere else; the only orchestrator |
+| `Reporting/` | `ScanReport`, `ConsoleReporter`, `HtmlExporter`, `CsvExporter`, `ReportExporter` | reads the report, never computes it |
+| `Checks/` | `ReportItem`, `Rankings`, `FrameworkPolyfills` | what more than one check needs |
+| `Checks/Vulnerabilities/` | `VulnerabilityCheck` | |
+| `Checks/Deprecations/` | `DeprecationCheck` | |
+| `Checks/Outdated/` | `OutdatedCheck` | |
+| `Checks/Licenses/` | `LicenseResolver`, `LicenseCatalog`, `LicenseRisk`, `LicenseItem`, the URL/file/text matchers, `ClearlyDefinedClient` | the licence file of the scanned version outranks the id-keyed database |
+| `Checks/Redundancy/` | `RedundancyAnalyzer` and its section model | skippable |
+| `Checks/Unused/` | `UnusedPackageAnalyzer`, `SourceNamespaceScanner` and its section model | skippable |
+| `Infrastructure/NuGetApi/` | `NuGetClient`, `PackageMetadataFetcher`, `PackageMetadata`, JSON models | reports what the API states — deriving anything from it is a check's job |
+| `Infrastructure/DotNet/` | `DotNetCli`, `NuGetExe`, process runner, JSON models | |
+| `Infrastructure/Packages/` | restored packages on disk: folders, assemblies, `.nuspec`, the legacy restore | nothing is executed — assemblies are read as metadata only |
+| `Discovery/` | finding the solution, reading its projects and declared packages | depends on nothing |
 
-The folders under `Services/` form a directed graph with no cycles: `Discovery` and `DotNet` depend on nothing, `Packages` builds on them, `Licensing` on `Packages`, and `Analysis` and `Reports` sit on top.
-| `Reporting/` | `ConsoleReporter`, `HtmlExporter`, `CsvExporter` | reads the report, never computes it |
-| `Models/` | the report model, one type per file | plain data plus `Rankings` for ordering |
+Dependencies point one way and the folders form a graph with no cycles. No check depends on another check, so adding one means a new folder under `Checks/`, a property on `ScanReport`, and a call in `ScanCommand`. JSON models are `internal`, so API shapes never leak.
 
-Classes with state or dependencies are instances (`NuGetClient`, `ReportBuilder`, `RedundancyAnalyzer`, `UnusedPackageAnalyzer`); pure functions are static (`ProjectFileReader`, `LicenseCatalog`, `SolutionDiscovery`). There are no interfaces — nothing has a second implementation, and the pure functions are testable as they are.
+Classes with state or dependencies are instances (`NuGetClient`, `OutdatedCheck`, `RedundancyAnalyzer`, `UnusedPackageAnalyzer`); pure functions are static (`ProjectFileReader`, `LicenseCatalog`, `SolutionDiscovery`). There are no interfaces — nothing has a second implementation, and the pure functions are testable as they are.
 
 ## The scan, in code
 
@@ -38,14 +42,14 @@ Classes with state or dependencies are instances (`NuGetClient`, `ReportBuilder`
 | Read projects | `SolutionProjectReader.ReadProjects` | regex over `.sln`, XML over `.slnx`; falls back to the solution folder |
 | Collect packages | `PackageCollector.CollectPackages` | keyed `Id|Version`, so one package at two versions stays two entries |
 | Restore legacy | `LegacyRestorer.RestoreAsync` | only when a `packages.config` exists |
-| Fetch metadata | `ReportBuilder.FetchMetadataAsync` | 8-way `Parallel.ForEachAsync` |
-| Resolve licences | `ReportBuilder.ResolveRemainingLicensesAsync` | second pass, only for the unresolved |
-| Build sections | `ReportBuilder.Build*` | vulnerable, deprecated, outdated, licences |
+| Fetch metadata | `PackageMetadataFetcher.FetchAsync` | 8-way `Parallel.ForEachAsync` |
+| Resolve licences | `LicenseResolver.ResolveFromUrlPatterns`, `ResolveRemainingAsync` | the second pass runs only for the unresolved |
+| Build sections | `VulnerabilityCheck`, `OutdatedCheck`, `DeprecationCheck`, `LicenseResolver.BuildItems` | |
 | Analyse | `RedundancyAnalyzer`, `UnusedPackageAnalyzer` | skippable from the CLI |
 | Render | `ConsoleReporter.Render`, `ReportExporter.Export` | |
 | Exit | `ExitCodeResolver.Resolve` | |
 
-Progress bars and spinners live in `ScanCommand`; services take an `Action<string>` callback instead, which keeps them free of console code and easy to test.
+Progress bars and spinners live in `ScanCommand`; the rest take an `Action<string>` callback instead, which keeps them free of console code and easy to test.
 
 ## Reading projects
 
@@ -74,15 +78,16 @@ Failures return `null` rather than throwing: a package missing from nuget.org, s
 
 ## Licence resolution
 
-Five steps, first hit wins, ordered so that everything offline runs before anything on the network:
+First hit wins, ordered so that everything offline runs before anything on the network:
 
-1. `licenseExpression` from the API.
-2. `LicenseCatalog.GetKnownLicense` — a database of exact ids plus an *ordered* prefix table. Order matters: `microsoft.aspnetcore.` (MIT) is checked before `microsoft.aspnet.` (Apache-2.0), otherwise the shorter prefix would win.
-3. `LicenseUrlResolver.ResolveFromUrlPattern` — the shape of the URL, no request.
-4. `PackageLicenseFileReader.Read` — the licence file inside the restored package, named by the `.nuspec` when it declares one and found by convention otherwise.
-5. `LicenseUrlResolver.ResolveFromContentAsync` — downloads the licence page.
+1. `licenseExpression` from the API, set by `NuGetClient`.
+2. `LicenseResolver.ResolveFromUrlPatterns` — the shape of the licence URL, no request.
+3. `PackageLicenseFileReader.Read` — the licence file inside the restored package, named by the `.nuspec` when it declares one and found by convention otherwise.
+4. `LicenseCatalog.GetKnownLicense` — a database of exact ids plus an *ordered* prefix table. Order matters: `microsoft.aspnetcore.` (MIT) is checked before `microsoft.aspnet.` (Apache-2.0), otherwise the shorter prefix would win. It runs after the licence file because it is keyed by id, and packages do change their terms between versions.
+5. `ClearlyDefinedClient` — only with `--online-licenses`.
+6. `LicenseUrlResolver.ResolveFromContentAsync` — downloads the licence page.
 
-Steps 4 and 5 share `SpdxTextMatcher`, whose fingerprints are ordered most specific first (AGPL before GPL, `Apache License, Version 2.0` before a bare mention of Apache).
+Steps 3 and 6 share `SpdxTextMatcher`, whose fingerprints are ordered most specific first (AGPL before GPL, `Apache License, Version 2.0` before a bare mention of Apache).
 
 `LicenseCatalog.GetRisk` then classifies the SPDX id, with a fuzzy fallback for compound expressions such as `MIT OR Apache-2.0`. The GPL check excludes LGPL explicitly — substring matching would otherwise call every LGPL package strong copyleft.
 
@@ -116,7 +121,7 @@ Comments and strings are *not* stripped, and that is intentional — the failure
 
 ## Testing
 
-`tests/NuGetGuard.Tests` — xUnit v3 with Shouldly, needing neither network nor a build. Tests write real temporary files through `Directory.CreateTempSubdirectory` rather than mocking the file system, because the code under test parses real project formats and that is what needs verifying.
+`tests/NuGetGuard.Tests` — xUnit v3 with Shouldly, needing neither network nor a build. Tests write real temporary files through `Directory.CreateTempSubdirectory` rather than mocking the file system, because the code under test parses real project formats and that is what needs verifying. The test folders mirror `src/NuGetGuard`, so a class and its tests share a path.
 
 `UnusedPackageAnalyzerTests` copies the tool's own assembly into a fake package folder, which gives a package with known namespaces without shipping a fixture binary.
 

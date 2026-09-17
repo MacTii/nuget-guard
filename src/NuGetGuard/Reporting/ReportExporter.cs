@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using NuGetGuard.Models;
 using Spectre.Console;
 
 namespace NuGetGuard.Reporting;

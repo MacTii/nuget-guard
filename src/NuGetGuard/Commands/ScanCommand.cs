@@ -1,13 +1,14 @@
-using NuGetGuard.Models;
+using NuGetGuard.Checks.Deprecations;
+using NuGetGuard.Checks.Licenses;
+using NuGetGuard.Checks.Outdated;
+using NuGetGuard.Checks.Redundancy;
+using NuGetGuard.Checks.Unused;
+using NuGetGuard.Checks.Vulnerabilities;
+using NuGetGuard.Discovery;
+using NuGetGuard.Infrastructure.NuGetApi;
+using NuGetGuard.Infrastructure.Packages;
+using NuGetGuard.Infrastructure;
 using NuGetGuard.Reporting;
-using NuGetGuard.Services.Analysis;
-using NuGetGuard.Services.Discovery;
-using NuGetGuard.Services.Licensing.ClearlyDefined;
-using NuGetGuard.Services.Licensing;
-using NuGetGuard.Services.NuGetApi;
-using NuGetGuard.Services.Packages;
-using NuGetGuard.Services.Reports;
-using NuGetGuard.Services;
 using Spectre.Console.Cli;
 using Spectre.Console;
 
@@ -58,10 +59,10 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
         var metadata = await FetchMetadataWithProgressAsync(fetcher, allPackages.Values.ToList());
         await ResolveLicensesWithProgressAsync(metadata, http, solution.PackagesFolder, settings.OnlineLicenses);
 
-        var (vulnerable, skippedProjects) = await VulnerabilityReport.BuildAsync(
+        var (vulnerable, skippedProjects) = await VulnerabilityCheck.BuildAsync(
             solution, metadata,
             onInfo: message => AnsiConsole.MarkupLine($"[grey]ℹ️  {Markup.Escape(message)}[/]"));
-        var (outdated, outdatedFailed) = await new OutdatedReport(nuget).BuildAsync(solution);
+        var (outdated, outdatedFailed) = await new OutdatedCheck(nuget).BuildAsync(solution);
         var redundant = settings.SkipRedundant
             ? []
             : await AnalyzeRedundantWithProgressAsync(nuget, solution, allPackages);
@@ -73,7 +74,7 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
         {
             SolutionName = solution.SolutionFile.Name,
             Vulnerable = vulnerable,
-            Deprecated = DeprecationReport.Build(metadata),
+            Deprecated = DeprecationCheck.Build(metadata),
             Outdated = outdated,
             OutdatedScanFailed = outdatedFailed,
             Licenses = LicenseResolver.BuildItems(metadata),
@@ -139,6 +140,8 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
     private static async Task ResolveLicensesWithProgressAsync(
         List<PackageMetadata> metadata, HttpClient http, string? legacyPackagesFolder, bool online)
     {
+        LicenseResolver.ResolveFromUrlPatterns(metadata);
+
         var unresolvedCount = metadata.Count(m => m.License == "Unknown");
         if (unresolvedCount == 0)
             return;

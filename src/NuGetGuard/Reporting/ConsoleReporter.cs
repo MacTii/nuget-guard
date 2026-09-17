@@ -1,4 +1,5 @@
-using NuGetGuard.Models;
+using NuGetGuard.Checks.Licenses;
+using NuGetGuard.Checks;
 using Spectre.Console;
 
 namespace NuGetGuard.Reporting;

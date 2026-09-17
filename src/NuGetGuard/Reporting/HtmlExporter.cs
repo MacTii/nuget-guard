@@ -1,7 +1,7 @@
+using NuGetGuard.Checks.Licenses;
+using NuGetGuard.Checks;
 using System.Net;
 using System.Text;
-using NuGetGuard.Models;
-using NuGetGuard.Services.Licensing;
 
 namespace NuGetGuard.Reporting;
 

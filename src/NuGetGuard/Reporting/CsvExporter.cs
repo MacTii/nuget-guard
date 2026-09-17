@@ -1,5 +1,5 @@
+using NuGetGuard.Checks;
 using System.Text;
-using NuGetGuard.Models;
 
 namespace NuGetGuard.Reporting;
 

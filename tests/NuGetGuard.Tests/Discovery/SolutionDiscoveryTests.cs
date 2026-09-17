@@ -1,5 +1,4 @@
-using NuGetGuard.Services.Discovery;
-using NuGetGuard.Services;
+using NuGetGuard.Discovery;
 
 namespace NuGetGuard.Tests.Discovery;
 

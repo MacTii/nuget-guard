@@ -252,17 +252,20 @@ Alternatives: commit the `.nupkg` next to a tool manifest and run `dotnet tool r
 nuget-guard/
 ├── NuGetGuard.slnx
 ├── src/NuGetGuard/            # tool source
-│   ├── Commands/              # CLI layer (Spectre.Console.Cli)
-│   ├── Services/              # one folder per concern, no cycles between them
-│   │   ├── Discovery/         # find the solution, read its projects and packages
-│   │   ├── Packages/          # read restored packages from disk
-│   │   ├── Licensing/         # identify a licence, classify its risk
-│   │   ├── Analysis/          # redundant and unused detection
-│   │   ├── Reports/           # build the vulnerable/deprecated/outdated sections
-│   │   ├── DotNet/            # dotnet / nuget.exe integration + JSON models
-│   │   └── NuGetApi/          # NuGet registration API client + models
-│   ├── Reporting/             # console / CSV / HTML output
-│   └── Models/                # report model
+│   ├── Commands/              # CLI layer (Spectre.Console.Cli), the scan orchestrator
+│   ├── Reporting/             # the report model and its console / CSV / HTML output
+│   ├── Checks/                # one folder per check, none depends on another
+│   │   ├── Vulnerabilities/
+│   │   ├── Deprecations/
+│   │   ├── Outdated/
+│   │   ├── Licenses/          # identify a licence, classify its risk
+│   │   ├── Redundancy/
+│   │   └── Unused/
+│   ├── Infrastructure/        # shared by the checks
+│   │   ├── NuGetApi/          # NuGet registration API client + models
+│   │   ├── DotNet/            # dotnet / nuget.exe integration + models
+│   │   └── Packages/          # read restored packages from disk
+│   └── Discovery/             # find the solution, read its projects and packages
 ├── tests/NuGetGuard.Tests/    # unit tests — no network required
 ├── docs/                      # how it works, checks in depth, troubleshooting
 ├── legacy/
